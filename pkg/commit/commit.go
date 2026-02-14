@@ -45,15 +45,23 @@ func Commit(message string) {
 	}
 
 	// Print commit information
-	fmt.Printf("Created %s commit: %s\n", commit.Type, commit.ID[:8])
+	fmt.Printf("Created %s commit: %s\n", commit.Type, truncateID(commit.ID))
 	fmt.Printf("Commit number: %d\n", commit.CommitNumber)
 	fmt.Printf("Message: %s\n", commit.Message)
-	fmt.Printf("Tree state: %s\n", commit.TreeStateID[:8])
+	fmt.Printf("Tree state: %s\n", truncateID(commit.TreeStateID))
 	if commit.ParentID != "" {
-		fmt.Printf("Parent: %s\n", commit.ParentID[:8])
+		fmt.Printf("Parent: %s\n", truncateID(commit.ParentID))
 	}
 	fmt.Printf("Timestamp: %s\n", commit.Timestamp.Format("2006-01-02 15:04:05"))
 	fmt.Printf("Files tracked: %d\n", len(entries))
+}
+
+// truncateID safely truncates an ID to 8 characters for display
+func truncateID(id string) string {
+	if len(id) > 8 {
+		return id[:8]
+	}
+	return id
 }
 
 // scanDirectory scans a directory and creates tree entries for all files

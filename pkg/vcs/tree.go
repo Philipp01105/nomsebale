@@ -44,17 +44,9 @@ func (ts *TreeState) generateID() string {
 
 // Delta represents changes between two tree states
 type Delta struct {
-	Added    []TreeEntry      `json:"added"`
-	Modified []TreeEntry      `json:"modified"`
-	Deleted  []string         `json:"deleted"` // paths
-	Changes  []FileChange     `json:"changes"`
-}
-
-// FileChange represents a change to a file
-type FileChange struct {
-	Path   string `json:"path"`
-	Before string `json:"before"`
-	After  string `json:"after"`
+	Added    []TreeEntry `json:"added"`
+	Modified []TreeEntry `json:"modified"`
+	Deleted  []string    `json:"deleted"` // paths
 }
 
 // ComputeDelta computes the differences between two tree states
@@ -63,7 +55,6 @@ func ComputeDelta(oldState, newState *TreeState) *Delta {
 		Added:    make([]TreeEntry, 0),
 		Modified: make([]TreeEntry, 0),
 		Deleted:  make([]string, 0),
-		Changes:  make([]FileChange, 0),
 	}
 
 	// Create maps for efficient lookup

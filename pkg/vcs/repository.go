@@ -151,8 +151,8 @@ func (r *Repository) ShouldCreateFullSnapshot() bool {
 	if r.CommitCount == 0 {
 		return true
 	}
-	// Create full snapshot at configured intervals
-	return r.CommitCount%r.Config.FullSnapshotInterval == 0
+	// Create full snapshot at configured intervals (e.g., commit 10, 20, 30...)
+	return (r.CommitCount+1)%r.Config.FullSnapshotInterval == 0
 }
 
 // SaveCommit saves a commit to disk
