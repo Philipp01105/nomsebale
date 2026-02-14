@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"noms/pkg/checkout"
 	"noms/pkg/commit"
 	"noms/pkg/initializer"
+	"noms/pkg/log"
+	"noms/pkg/status"
 	"os"
 )
 
@@ -13,6 +16,9 @@ func main() {
 		fmt.Println("Commands:")
 		fmt.Println("  init           Initialize a new noms repository")
 		fmt.Println("  commit <msg>   Create a new commit with the given message")
+		fmt.Println("  log            Show commit history")
+		fmt.Println("  status         Show working tree status")
+		fmt.Println("  checkout <id>  Checkout a specific commit")
 		os.Exit(1)
 	}
 
@@ -28,6 +34,17 @@ func main() {
 			}
 			message := os.Args[2]
 			commit.Commit(message)
+		},
+		"log": log.Log,
+		"status": status.Status,
+		"checkout": func() {
+			if len(os.Args) < 3 {
+				fmt.Println("Error: commit ID required")
+				fmt.Println("Usage: noms checkout <commit-id>")
+				os.Exit(1)
+			}
+			commitID := os.Args[2]
+			checkout.Checkout(commitID)
 		},
 	}
 
