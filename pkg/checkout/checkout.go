@@ -86,7 +86,7 @@ func matchesCommitID(fullID, partialID string) bool {
 	if fullID == partialID {
 		return true
 	}
-	if len(partialID) >= 4 && len(fullID) >= len(partialID) {
+	if len(partialID) >= 4 && len(partialID) <= len(fullID) {
 		return fullID[:len(partialID)] == partialID
 	}
 	return false

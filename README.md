@@ -85,7 +85,7 @@ noms checkout <commit-id>
 
 You can use either:
 - Full commit ID: `081ad6fe1c66819cadd7df0843bf1bb46a0878aade3b39479469490f1a566e97`
-- Partial commit ID (at least 4 characters): `081ad6fe`
+- Partial commit ID (at least 4 characters): `081ad6fe` or `081a`
 
 **Note**: The current implementation updates the HEAD pointer but does not restore file contents. This is a basic version control system focused on tracking changes rather than full file restoration.
 
