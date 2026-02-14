@@ -117,6 +117,11 @@ func (r *Repository) saveConfig() error {
 	return os.WriteFile(configPath, data, 0644)
 }
 
+// SaveConfig is a public wrapper for saveConfig
+func (r *Repository) SaveConfig() error {
+	return r.saveConfig()
+}
+
 // loadConfig loads the repository configuration from disk
 func (r *Repository) loadConfig() error {
 	configPath := filepath.Join(r.Path, NomsDir, ConfigFile)
@@ -132,6 +137,11 @@ func (r *Repository) updateHEAD(commitID string) error {
 	headPath := filepath.Join(r.Path, NomsDir, HeadFile)
 	r.HEAD = commitID
 	return os.WriteFile(headPath, []byte(commitID), 0644)
+}
+
+// UpdateHEAD is a public wrapper for updateHEAD
+func (r *Repository) UpdateHEAD(commitID string) error {
+	return r.updateHEAD(commitID)
 }
 
 // loadHEAD loads the HEAD reference
