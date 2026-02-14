@@ -14,11 +14,11 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: noms <command> [args]")
 		fmt.Println("Commands:")
-		fmt.Println("  init              Initialize a new noms repository")
-		fmt.Println("  commit <msg>      Create a new commit with the given message")
-		fmt.Println("  log               Show commit history")
-		fmt.Println("  status            Show working tree status")
-		fmt.Println("  checkout <id>     Checkout a specific commit")
+		fmt.Println("  init           Initialize a new noms repository")
+		fmt.Println("  commit <msg>   Create a new commit with the given message")
+		fmt.Println("  log            Show commit history")
+		fmt.Println("  status         Show working tree status")
+		fmt.Println("  checkout <id>  Checkout a specific commit")
 		os.Exit(1)
 	}
 

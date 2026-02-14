@@ -2,6 +2,7 @@ package checkout
 
 import (
 	"fmt"
+	"noms/pkg/utils"
 	"noms/pkg/vcs"
 	"os"
 )
@@ -44,7 +45,7 @@ func Checkout(commitID string) {
 	}
 
 	// Restore files from tree state
-	fmt.Printf("Checking out commit %s\n", truncateID(fullCommitID))
+	fmt.Printf("Checking out commit %s\n", utils.TruncateID(fullCommitID))
 	fmt.Printf("Commit #%d: %s\n", commit.CommitNumber, commit.Message)
 	
 	// Note: For a basic implementation, we just inform the user
@@ -57,7 +58,7 @@ func Checkout(commitID string) {
 	for _, entry := range treeState.Entries {
 		if !entry.IsDirectory {
 			fileCount++
-			fmt.Printf("  %s (hash: %s)\n", entry.Path, truncateID(entry.Hash))
+			fmt.Printf("  %s (hash: %s)\n", entry.Path, utils.TruncateID(entry.Hash))
 		}
 	}
 	
@@ -77,7 +78,18 @@ func Checkout(commitID string) {
 		return
 	}
 
-	fmt.Printf("\nHEAD is now at %s\n", truncateID(fullCommitID))
+	fmt.Printf("\nHEAD is now at %s\n", utils.TruncateID(fullCommitID))
+}
+
+// matchesCommitID checks if a commit ID matches a partial ID
+func matchesCommitID(fullID, partialID string) bool {
+	if fullID == partialID {
+		return true
+	}
+	if len(partialID) >= 4 && len(fullID) >= len(partialID) {
+		return fullID[:len(partialID)] == partialID
+	}
+	return false
 }
 
 // findCommit finds a commit by full or partial ID
@@ -91,7 +103,7 @@ func findCommit(repo *vcs.Repository, partialID string) (string, error) {
 	currentID := repo.HEAD
 	for currentID != "" {
 		// Check if this commit matches
-		if currentID == partialID || (len(partialID) >= 4 && len(currentID) >= len(partialID) && currentID[:len(partialID)] == partialID) {
+		if matchesCommitID(currentID, partialID) {
 			return currentID, nil
 		}
 
@@ -105,12 +117,4 @@ func findCommit(repo *vcs.Repository, partialID string) (string, error) {
 	}
 
 	return "", fmt.Errorf("commit not found: %s", partialID)
-}
-
-// truncateID safely truncates an ID to 8 characters for display
-func truncateID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
-	}
-	return id
 }

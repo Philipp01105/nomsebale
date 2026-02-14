@@ -1,14 +1,10 @@
 package status
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
+	"noms/pkg/utils"
 	"noms/pkg/vcs"
 	"os"
-	"path/filepath"
-	"strings"
 )
 
 // Status shows the current working tree status
@@ -28,7 +24,7 @@ func Status() {
 	}
 
 	// Scan current directory
-	currentEntries, err := scanDirectory(cwd)
+	currentEntries, err := utils.ScanDirectory(cwd)
 	if err != nil {
 		fmt.Printf("Error scanning directory: %v\n", err)
 		return
@@ -68,7 +64,7 @@ func Status() {
 	delta := vcs.ComputeDelta(treeState, currentTreeState)
 
 	// Display status
-	fmt.Printf("On commit %s\n", truncateID(repo.HEAD))
+	fmt.Printf("On commit %s\n", utils.TruncateID(repo.HEAD))
 	fmt.Printf("Commit #%d: %s\n", headCommit.CommitNumber, headCommit.Message)
 	
 	hasChanges := false
@@ -118,86 +114,4 @@ func countFiles(entries []vcs.TreeEntry) int {
 		}
 	}
 	return count
-}
-
-// truncateID safely truncates an ID to 8 characters for display
-func truncateID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
-	}
-	return id
-}
-
-// scanDirectory scans a directory and creates tree entries for all files
-func scanDirectory(rootPath string) ([]vcs.TreeEntry, error) {
-	entries := make([]vcs.TreeEntry, 0)
-
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip .noms directory
-		nomsPath := filepath.Join(rootPath, vcs.NomsDir)
-		if path == nomsPath || strings.HasPrefix(path, nomsPath+string(filepath.Separator)) {
-			if info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Skip the root directory itself
-		if path == rootPath {
-			return nil
-		}
-
-		// Get relative path
-		relPath, err := filepath.Rel(rootPath, path)
-		if err != nil {
-			return err
-		}
-
-		// Calculate file hash
-		hash := ""
-		if !info.IsDir() {
-			hash, err = hashFile(path)
-			if err != nil {
-				return err
-			}
-		}
-
-		entry := vcs.TreeEntry{
-			Path:         relPath,
-			Hash:         hash,
-			IsDirectory:  info.IsDir(),
-			Size:         info.Size(),
-			Permissions:  info.Mode().String(),
-			ModifiedTime: info.ModTime().Unix(),
-		}
-
-		entries = append(entries, entry)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return entries, nil
-}
-
-// hashFile computes the SHA256 hash of a file
-func hashFile(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
 }

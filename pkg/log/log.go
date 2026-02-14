@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"noms/pkg/utils"
 	"noms/pkg/vcs"
 	"os"
 )
@@ -33,7 +34,7 @@ func Log() {
 	for currentID != "" {
 		commit, err := repo.LoadCommit(currentID)
 		if err != nil {
-			fmt.Printf("Error loading commit %s: %v\n", truncateID(currentID), err)
+			fmt.Printf("Error loading commit %s: %v\n", utils.TruncateID(currentID), err)
 			return
 		}
 
@@ -48,12 +49,4 @@ func Log() {
 		// Move to parent commit
 		currentID = commit.ParentID
 	}
-}
-
-// truncateID safely truncates an ID to 8 characters for display
-func truncateID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
-	}
-	return id
 }
