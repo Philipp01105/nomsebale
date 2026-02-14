@@ -37,7 +37,7 @@ func Init() {
 	// Initialize repository with default configuration
 	config := vcs.RepositoryConfig{
 		FullSnapshotInterval: 10,
-		Author:               "default",
+		Author:               "Unknown User",
 	}
 
 	repo, err := vcs.InitRepository(cwd, config)
