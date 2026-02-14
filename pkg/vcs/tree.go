@@ -3,7 +3,7 @@ package vcs
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"strings"
 )
 
 // TreeState represents the state of the file tree at a point in time
@@ -34,11 +34,14 @@ func NewTreeState(entries []TreeEntry) *TreeState {
 // generateID generates a unique hash for the tree state
 // Hash = SHA256(concatenated entry hashes and paths)
 func (ts *TreeState) generateID() string {
-	data := ""
+	var builder strings.Builder
 	for _, entry := range ts.Entries {
-		data += fmt.Sprintf("%s:%s;", entry.Path, entry.Hash)
+		builder.WriteString(entry.Path)
+		builder.WriteString(":")
+		builder.WriteString(entry.Hash)
+		builder.WriteString(";")
 	}
-	hash := sha256.Sum256([]byte(data))
+	hash := sha256.Sum256([]byte(builder.String()))
 	return hex.EncodeToString(hash[:])
 }
 

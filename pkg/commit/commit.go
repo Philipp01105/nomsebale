@@ -73,8 +73,9 @@ func scanDirectory(rootPath string) ([]vcs.TreeEntry, error) {
 			return err
 		}
 
-		// Skip .noms directory
-		if strings.Contains(path, vcs.NomsDir) {
+		// Skip .noms directory - check if path contains .noms as a directory component
+		nomsPath := filepath.Join(rootPath, vcs.NomsDir)
+		if path == nomsPath || strings.HasPrefix(path, nomsPath+string(filepath.Separator)) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
