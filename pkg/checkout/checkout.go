@@ -27,62 +27,113 @@ func Checkout(ref string) {
 		return
 	}
 
-	var commitID string
-	var isBranch bool
-	var branchName string
+	// Resolve the reference to a commit ID
+	commitID, isBranch, branchName, err := resolveCheckoutRef(repo, ref)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 
+	// Handle empty commit case
+	if commitID == "" {
+		handleEmptyCommit(repo, isBranch, branchName)
+		return
+	}
+
+	// Load the commit and tree state
+	commit, treeState, err := loadCommitAndTree(repo, commitID)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	// Print checkout info
+	printCheckoutInfo(isBranch, branchName, commitID, commit)
+	fmt.Printf("\nRestoring %d entries...\n", len(treeState.Entries))
+
+	// Restore files from tree state
+	stats := restoreTreeState(repo, cwd, treeState)
+
+	// Delete files that are not in the tree state
+	stats.deletedCount = deleteUnwantedFiles(cwd, stats.treeFiles, stats.currentFiles)
+
+	// Print summary
+	printCheckoutSummary(stats)
+
+	// Update HEAD appropriately
+	if err := updateRepositoryHead(repo, isBranch, branchName, commitID); err != nil {
+		fmt.Printf("Error updating HEAD: %v\n", err)
+		return
+	}
+}
+
+type checkoutStats struct {
+	restoredCount int
+	skippedCount  int
+	failedCount   int
+	deletedCount  int
+	treeFiles     map[string]bool
+	currentFiles  map[string]bool
+}
+
+// resolveCheckoutRef resolves a reference (branch or commit) to a commit ID
+func resolveCheckoutRef(repo *vcs.Repository, ref string) (commitID string, isBranch bool, branchName string, err error) {
 	// Check if ref is a branch name
 	if repo.BranchExists(ref) {
-		branch, err := repo.GetBranch(ref)
-		if err != nil {
-			fmt.Printf("Error loading branch: %v\n", err)
+		branch, e := repo.GetBranch(ref)
+		if e != nil {
+			err = fmt.Errorf("loading branch: %w", e)
 			return
 		}
 		commitID = branch.CommitID
 		isBranch = true
 		branchName = ref
-	} else {
-		// Try to find commit by ID (allow partial commit IDs)
-		fullCommitID, err := findCommit(repo, ref)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-		commitID = fullCommitID
-		isBranch = false
-	}
-
-	// If no commits on branch yet
-	if commitID == "" {
-		if isBranch {
-			// Switch to branch even if it has no commits yet
-			if err := repo.SetCurrentBranch(branchName); err != nil {
-				fmt.Printf("Error switching to branch: %v\n", err)
-				return
-			}
-			fmt.Printf("Switched to branch '%s'\n", branchName)
-			fmt.Println("No commits on this branch yet")
-			return
-		}
-		fmt.Println("Error: cannot checkout empty reference")
 		return
 	}
 
-	// Load the commit
+	// Try to find commit by ID (allow partial commit IDs)
+	fullCommitID, e := findCommit(repo, ref)
+	if e != nil {
+		err = e
+		return
+	}
+	commitID = fullCommitID
+	isBranch = false
+	return
+}
+
+// handleEmptyCommit handles the case when checking out a branch with no commits
+func handleEmptyCommit(repo *vcs.Repository, isBranch bool, branchName string) {
+	if isBranch {
+		// Switch to branch even if it has no commits yet
+		if err := repo.SetCurrentBranch(branchName); err != nil {
+			fmt.Printf("Error switching to branch: %v\n", err)
+			return
+		}
+		fmt.Printf("Switched to branch '%s'\n", branchName)
+		fmt.Println("No commits on this branch yet")
+		return
+	}
+	fmt.Println("Error: cannot checkout empty reference")
+}
+
+// loadCommitAndTree loads a commit and its associated tree state
+func loadCommitAndTree(repo *vcs.Repository, commitID string) (*vcs.Commit, *vcs.TreeState, error) {
 	commit, err := repo.LoadCommit(commitID)
 	if err != nil {
-		fmt.Printf("Error loading commit: %v\n", err)
-		return
+		return nil, nil, fmt.Errorf("loading commit: %w", err)
 	}
 
-	// Load the tree state
 	treeState, err := repo.LoadTreeState(commit.TreeStateID)
 	if err != nil {
-		fmt.Printf("Error loading tree state: %v\n", err)
-		return
+		return nil, nil, fmt.Errorf("loading tree state: %w", err)
 	}
 
-	// Restore files from tree state
+	return commit, treeState, nil
+}
+
+// printCheckoutInfo prints information about the checkout operation
+func printCheckoutInfo(isBranch bool, branchName, commitID string, commit *vcs.Commit) {
 	if isBranch {
 		fmt.Printf("Switching to branch '%s'\n", branchName)
 	} else {
@@ -90,11 +141,14 @@ func Checkout(ref string) {
 		fmt.Printf("Note: switching to detached HEAD state\n")
 	}
 	fmt.Printf("Commit #%d: %s\n", commit.CommitNumber, commit.Message)
-	fmt.Printf("\nRestoring %d entries...\n", len(treeState.Entries))
+}
 
-	restoredCount := 0
-	skippedCount := 0
-	failedCount := 0
+// restoreTreeState restores files from the tree state
+func restoreTreeState(repo *vcs.Repository, cwd string, treeState *vcs.TreeState) checkoutStats {
+	stats := checkoutStats{
+		treeFiles:    make(map[string]bool),
+		currentFiles: make(map[string]bool),
+	}
 
 	// Get current files to track what should be deleted
 	currentEntries, err := utils.ScanDirectory(cwd)
@@ -102,15 +156,11 @@ func Checkout(ref string) {
 		fmt.Printf("Warning: failed to scan current directory: %v\n", err)
 	}
 
-	currentFiles := make(map[string]bool)
 	for _, entry := range currentEntries {
 		if !entry.IsDirectory {
-			currentFiles[entry.Path] = true
+			stats.currentFiles[entry.Path] = true
 		}
 	}
-
-	// Track files in the tree state
-	treeFiles := make(map[string]bool)
 
 	// Restore files from the tree state
 	for _, entry := range treeState.Entries {
@@ -119,19 +169,19 @@ func Checkout(ref string) {
 			dirPath := utils.JoinPath(cwd, entry.Path)
 			if err := os.MkdirAll(dirPath, 0o755); err != nil {
 				fmt.Printf("  Failed to create directory %s: %v\n", entry.Path, err)
-				failedCount++
+				stats.failedCount++
 			}
 			continue
 		}
 
-		treeFiles[entry.Path] = true
+		stats.treeFiles[entry.Path] = true
 
 		// Check if file already exists with same hash
 		filePath := utils.JoinPath(cwd, entry.Path)
 		if _, err := os.Stat(filePath); err == nil {
 			currentHash, err := utils.HashFile(filePath)
 			if err == nil && currentHash == entry.Hash {
-				skippedCount++
+				stats.skippedCount++
 				continue
 			}
 		}
@@ -140,7 +190,7 @@ func Checkout(ref string) {
 		content, err := repo.LoadBlob(entry.Hash)
 		if err != nil {
 			fmt.Printf("  Failed to load content for %s: %v\n", entry.Path, err)
-			failedCount++
+			stats.failedCount++
 			continue
 		}
 
@@ -148,14 +198,14 @@ func Checkout(ref string) {
 		parentDir := filepath.Dir(filePath)
 		if err := os.MkdirAll(parentDir, 0o755); err != nil {
 			fmt.Printf("  Failed to create parent directory for %s: %v\n", entry.Path, err)
-			failedCount++
+			stats.failedCount++
 			continue
 		}
 
 		// Write file
 		if err := os.WriteFile(filePath, content, 0o644); err != nil {
 			fmt.Printf("  Failed to write file %s: %v\n", entry.Path, err)
-			failedCount++
+			stats.failedCount++
 			continue
 		}
 
@@ -167,10 +217,14 @@ func Checkout(ref string) {
 			}
 		}
 
-		restoredCount++
+		stats.restoredCount++
 	}
 
-	// Delete files that are not in the tree state
+	return stats
+}
+
+// deleteUnwantedFiles deletes files that are not in the tree state
+func deleteUnwantedFiles(cwd string, treeFiles, currentFiles map[string]bool) int {
 	deletedCount := 0
 	for filePath := range currentFiles {
 		if !treeFiles[filePath] {
@@ -182,41 +236,46 @@ func Checkout(ref string) {
 			}
 		}
 	}
+	return deletedCount
+}
 
+// printCheckoutSummary prints a summary of the checkout operation
+func printCheckoutSummary(stats checkoutStats) {
 	fmt.Printf("\nCheckout complete:\n")
-	fmt.Printf("  Restored: %d files\n", restoredCount)
-	if skippedCount > 0 {
-		fmt.Printf("  Skipped (unchanged): %d files\n", skippedCount)
+	fmt.Printf("  Restored: %d files\n", stats.restoredCount)
+	if stats.skippedCount > 0 {
+		fmt.Printf("  Skipped (unchanged): %d files\n", stats.skippedCount)
 	}
-	if deletedCount > 0 {
-		fmt.Printf("  Deleted: %d files\n", deletedCount)
+	if stats.deletedCount > 0 {
+		fmt.Printf("  Deleted: %d files\n", stats.deletedCount)
 	}
-	if failedCount > 0 {
-		fmt.Printf("  Failed: %d files\n", failedCount)
+	if stats.failedCount > 0 {
+		fmt.Printf("  Failed: %d files\n", stats.failedCount)
 	}
+}
 
-	// Update HEAD appropriately
+// updateRepositoryHead updates HEAD to point to the checked out ref
+func updateRepositoryHead(repo *vcs.Repository, isBranch bool, branchName, commitID string) error {
 	if isBranch {
 		// Set HEAD to point to the branch
 		if err := repo.SetCurrentBranch(branchName); err != nil {
-			fmt.Printf("Error setting branch: %v\n", err)
-			return
+			return fmt.Errorf("setting branch: %w", err)
 		}
 		fmt.Printf("\nSwitched to branch '%s'\n", branchName)
 	} else {
 		// Detached HEAD - point directly to commit
 		if err := repo.UpdateHEAD(commitID); err != nil {
-			fmt.Printf("Error updating HEAD: %v\n", err)
-			return
+			return fmt.Errorf("updating HEAD: %w", err)
 		}
 		fmt.Printf("\nHEAD is now at %s (detached)\n", utils.TruncateID(commitID))
 	}
 
 	// Save config with updated HEAD
 	if err := repo.SaveConfig(); err != nil {
-		fmt.Printf("Error saving config: %v\n", err)
-		return
+		return fmt.Errorf("saving config: %w", err)
 	}
+
+	return nil
 }
 
 // matchesCommitID checks if a commit ID matches a partial ID
