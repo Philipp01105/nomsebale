@@ -5,10 +5,11 @@ Noms is a basic version control system written in Go, designed to track file cha
 ## Features
 
 - **Repository initialization**: Create a new version control repository
+- **File storage**: Store complete file contents as blobs
 - **Commit tracking**: Create full and differential commits
 - **History management**: View commit history with timestamps and metadata
 - **Status checking**: See what files have changed since the last commit
-- **Commit checkout**: Switch between different commits (basic implementation)
+- **Complete checkout**: Restore file contents from any commit in history
 
 ## Installation
 
@@ -77,7 +78,7 @@ Shows for each commit:
 
 ### Checkout a Commit
 
-Switch to a specific commit (basic implementation):
+Switch to a specific commit and restore all files:
 
 ```bash
 noms checkout <commit-id>
@@ -87,7 +88,11 @@ You can use either:
 - Full commit ID: `081ad6fe1c66819cadd7df0843bf1bb46a0878aade3b39479469490f1a566e97`
 - Partial commit ID (at least 4 characters): `081ad6fe` or `081a`
 
-**Note**: The current implementation updates the HEAD pointer but does not restore file contents. This is a basic version control system focused on tracking changes rather than full file restoration.
+The checkout command:
+- Restores all files to their state in the specified commit
+- Deletes files that don't exist in that commit
+- Updates file permissions
+- Updates the HEAD pointer to the specified commit
 
 ## Repository Structure
 
@@ -96,7 +101,8 @@ You can use either:
 ├── config.json       # Repository configuration and metadata
 ├── HEAD              # Current HEAD commit reference
 ├── commits/          # Commit metadata files
-└── trees/            # Tree state files (file structure snapshots)
+├── trees/            # Tree state files (file structure snapshots)
+└── objects/          # File content blobs (stored by hash)
 ```
 
 ## Configuration
@@ -129,6 +135,13 @@ Tree states capture the structure and metadata of files at a specific point in t
 - File sizes
 - Permissions
 - Modification timestamps
+
+### File Storage
+
+File contents are stored as blobs in the objects directory:
+- Blobs are named by their SHA256 hash
+- Files are sharded into subdirectories using the first 2 characters of the hash
+- Duplicate files (same hash) are stored only once, saving space
 
 ### Change Detection
 
@@ -173,18 +186,16 @@ noms checkout 081ad6fe
 
 This is a basic version control system with some limitations:
 
-1. **File restoration**: Checkout command updates HEAD but doesn't restore file contents
-2. **No branching**: Single linear commit history only
-3. **No merging**: Cannot merge different development paths
-4. **No remote repositories**: Local-only version control
-5. **No staging area**: All changes are committed together
-6. **No file content storage**: Only tracks file metadata and hashes
+1. **No branching**: Single linear commit history only
+2. **No merging**: Cannot merge different development paths
+3. **No remote repositories**: Local-only version control
+4. **No staging area**: All changes are committed together
+5. **No incremental checkout**: Always restores the complete tree state
 
 ## Future Enhancements
 
 Potential improvements for a more complete version control system:
 
-- Store actual file contents for full checkout capability
 - Implement branching and merging
 - Add remote repository support
 - Implement a staging area for selective commits
@@ -192,6 +203,7 @@ Potential improvements for a more complete version control system:
 - Support for .nomsignore files
 - Optimize storage with compression
 - Add tagging system for releases
+- Implement file locking for concurrent access
 
 ## Development
 
