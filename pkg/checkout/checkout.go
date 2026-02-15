@@ -68,12 +68,12 @@ func Checkout(ref string) {
 }
 
 type checkoutStats struct {
+	treeFiles     map[string]bool
+	currentFiles  map[string]bool
 	restoredCount int
 	skippedCount  int
 	failedCount   int
 	deletedCount  int
-	treeFiles     map[string]bool
-	currentFiles  map[string]bool
 }
 
 // resolveCheckoutRef resolves a reference (branch or commit) to a commit ID

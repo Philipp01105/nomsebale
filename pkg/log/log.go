@@ -70,8 +70,8 @@ func Log() {
 type commitNode struct {
 	commit   *vcs.Commit
 	branches []string // branches pointing to this commit
-	isHead   bool     // is this the current HEAD
 	children []string // child commit IDs
+	isHead   bool     // is this the current HEAD
 }
 
 // printCommitTree recursively prints commits in tree format.

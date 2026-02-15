@@ -25,18 +25,18 @@ const (
 
 // Repository represents a version control repository
 type Repository struct {
+	Config      RepositoryConfig `json:"config"`
 	Path        string           `json:"path"`
 	HEAD        string           `json:"head"`
 	CommitCount int              `json:"commit_count"`
-	Config      RepositoryConfig `json:"config"`
 }
 
 // RepositoryConfig contains repository configuration
 type RepositoryConfig struct {
-	// FullSnapshotInterval determines after how many commits a full snapshot is created
-	FullSnapshotInterval int `json:"full_snapshot_interval"`
 	// Author default author for commits
 	Author string `json:"author"`
+	// FullSnapshotInterval determines after how many commits a full snapshot is created
+	FullSnapshotInterval int `json:"full_snapshot_interval"`
 }
 
 // InitRepository initializes a new repository at the given path

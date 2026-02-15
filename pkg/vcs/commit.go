@@ -19,20 +19,20 @@ const (
 
 // Commit represents a version control commit
 type Commit struct {
-	ID           string     `json:"id"`
-	Type         CommitType `json:"type"`
 	Timestamp    time.Time  `json:"timestamp"`
+	Metadata     Metadata   `json:"metadata"`
+	ID           string     `json:"id"`
 	ParentID     string     `json:"parent_id,omitempty"`
 	TreeStateID  string     `json:"tree_state_id"`
 	Message      string     `json:"message"`
-	Metadata     Metadata   `json:"metadata"`
+	Type         CommitType `json:"type"`
 	CommitNumber int        `json:"commit_number"`
 }
 
 // Metadata contains additional commit information
 type Metadata struct {
-	Author string            `json:"author"`
 	Extra  map[string]string `json:"extra,omitempty"`
+	Author string            `json:"author"`
 }
 
 // NewCommit creates a new commit with the given parameters
