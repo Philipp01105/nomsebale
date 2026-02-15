@@ -28,12 +28,11 @@ linters-settings:
       - style
 
 linters:
-  disable-all: true
   enable:
     - errcheck
     - govet
     - ineffassign
-    - staticcheck  # staticcheck includes gosimple
+    - staticcheck
     - unused
     - misspell
     - goconst
@@ -41,23 +40,13 @@ linters:
     - gocyclo
     - dupl
 
-formatters:
-  disable-all: true
-  enable:
-    - gofmt
-    - goimports
-
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
+  exclude-dirs:
+    - test
+  exclude-files:
+    - ".*_test\\.go$"
 
 run:
   timeout: 5m
