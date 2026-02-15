@@ -38,7 +38,7 @@ func main() {
 			message := os.Args[2]
 			commit.Commit(message)
 		},
-		"log": log.Log,
+		"log":    log.Log,
 		"status": status.Status,
 		"checkout": func() {
 			if len(os.Args) < 3 {
@@ -55,7 +55,7 @@ func main() {
 				branch.List()
 				return
 			}
-			
+
 			// Check for -d flag (delete)
 			if os.Args[2] == "-d" {
 				if len(os.Args) < 4 {
@@ -67,7 +67,7 @@ func main() {
 				branch.Delete(branchName)
 				return
 			}
-			
+
 			// Create new branch
 			branchName := os.Args[2]
 			branch.Create(branchName)

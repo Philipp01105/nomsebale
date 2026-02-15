@@ -90,27 +90,27 @@ func Checkout(ref string) {
 	}
 	fmt.Printf("Commit #%d: %s\n", commit.CommitNumber, commit.Message)
 	fmt.Printf("\nRestoring %d entries...\n", len(treeState.Entries))
-	
+
 	restoredCount := 0
 	skippedCount := 0
 	failedCount := 0
-	
+
 	// Get current files to track what should be deleted
 	currentEntries, err := utils.ScanDirectory(cwd)
 	if err != nil {
 		fmt.Printf("Warning: failed to scan current directory: %v\n", err)
 	}
-	
+
 	currentFiles := make(map[string]bool)
 	for _, entry := range currentEntries {
 		if !entry.IsDirectory {
 			currentFiles[entry.Path] = true
 		}
 	}
-	
+
 	// Track files in the tree state
 	treeFiles := make(map[string]bool)
-	
+
 	// Restore files from the tree state
 	for _, entry := range treeState.Entries {
 		if entry.IsDirectory {
@@ -122,9 +122,9 @@ func Checkout(ref string) {
 			}
 			continue
 		}
-		
+
 		treeFiles[entry.Path] = true
-		
+
 		// Check if file already exists with same hash
 		filePath := utils.JoinPath(cwd, entry.Path)
 		if _, err := os.Stat(filePath); err == nil {
@@ -134,7 +134,7 @@ func Checkout(ref string) {
 				continue
 			}
 		}
-		
+
 		// Load blob content
 		content, err := repo.LoadBlob(entry.Hash)
 		if err != nil {
@@ -142,7 +142,7 @@ func Checkout(ref string) {
 			failedCount++
 			continue
 		}
-		
+
 		// Ensure parent directory exists
 		parentDir := filepath.Dir(filePath)
 		if err := os.MkdirAll(parentDir, 0755); err != nil {
@@ -150,14 +150,14 @@ func Checkout(ref string) {
 			failedCount++
 			continue
 		}
-		
+
 		// Write file
 		if err := os.WriteFile(filePath, content, 0644); err != nil {
 			fmt.Printf("  Failed to write file %s: %v\n", entry.Path, err)
 			failedCount++
 			continue
 		}
-		
+
 		// Try to restore permissions (best effort)
 		if mode, err := parsePermissions(entry.Permissions); err == nil {
 			if err := os.Chmod(filePath, mode); err != nil {
@@ -165,10 +165,10 @@ func Checkout(ref string) {
 				fmt.Printf("  Warning: failed to restore permissions for %s: %v\n", entry.Path, err)
 			}
 		}
-		
+
 		restoredCount++
 	}
-	
+
 	// Delete files that are not in the tree state
 	deletedCount := 0
 	for filePath := range currentFiles {
@@ -181,7 +181,7 @@ func Checkout(ref string) {
 			}
 		}
 	}
-	
+
 	fmt.Printf("\nCheckout complete:\n")
 	fmt.Printf("  Restored: %d files\n", restoredCount)
 	if skippedCount > 0 {
@@ -237,39 +237,39 @@ func findCommit(repo *vcs.Repository, partialID string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error reading commits directory: %w", err)
 	}
-	
+
 	if len(entries) == 0 {
 		return "", fmt.Errorf("no commits in repository")
 	}
-	
+
 	// Search through all commits
 	var matches []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		// Extract commit ID from filename (remove .json extension)
 		filename := entry.Name()
 		if !strings.HasSuffix(filename, ".json") {
 			continue
 		}
 		commitID := filename[:len(filename)-5]
-		
+
 		// Check if this commit matches
 		if matchesCommitID(commitID, partialID) {
 			matches = append(matches, commitID)
 		}
 	}
-	
+
 	if len(matches) == 0 {
 		return "", fmt.Errorf("commit not found: %s", partialID)
 	}
-	
+
 	if len(matches) > 1 {
 		return "", fmt.Errorf("ambiguous commit ID %s, matches: %d commits", partialID, len(matches))
 	}
-	
+
 	return matches[0], nil
 }
 
@@ -284,11 +284,11 @@ func parsePermissions(permStr string) (os.FileMode, error) {
 		}
 		return os.FileMode(perm), nil
 	}
-	
+
 	// Try to parse symbolic notation like "-rw-r--r--"
 	if len(permStr) >= 10 {
 		var mode os.FileMode
-		
+
 		// Owner permissions
 		if permStr[1] == 'r' {
 			mode |= 0400
@@ -299,7 +299,7 @@ func parsePermissions(permStr string) (os.FileMode, error) {
 		if permStr[3] == 'x' {
 			mode |= 0100
 		}
-		
+
 		// Group permissions
 		if permStr[4] == 'r' {
 			mode |= 0040
@@ -310,7 +310,7 @@ func parsePermissions(permStr string) (os.FileMode, error) {
 		if permStr[6] == 'x' {
 			mode |= 0010
 		}
-		
+
 		// Other permissions
 		if permStr[7] == 'r' {
 			mode |= 0004
@@ -321,9 +321,9 @@ func parsePermissions(permStr string) (os.FileMode, error) {
 		if permStr[9] == 'x' {
 			mode |= 0001
 		}
-		
+
 		return mode, nil
 	}
-	
+
 	return 0, fmt.Errorf("invalid permission string: %s", permStr)
 }

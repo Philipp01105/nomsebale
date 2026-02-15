@@ -14,12 +14,12 @@ type TreeState struct {
 
 // TreeEntry represents a file or directory in the tree
 type TreeEntry struct {
-	Path         string   `json:"path"`
-	Hash         string   `json:"hash"`
-	IsDirectory  bool     `json:"is_directory"`
-	Size         int64    `json:"size"`
-	Permissions  string   `json:"permissions"`
-	ModifiedTime int64    `json:"modified_time"`
+	Path         string `json:"path"`
+	Hash         string `json:"hash"`
+	IsDirectory  bool   `json:"is_directory"`
+	Size         int64  `json:"size"`
+	Permissions  string `json:"permissions"`
+	ModifiedTime int64  `json:"modified_time"`
 }
 
 // NewTreeState creates a new tree state from entries

@@ -43,7 +43,7 @@ func Commit(message string) {
 					fmt.Printf("Warning: failed to read file %s: %v\n", entry.Path, err)
 					continue
 				}
-				
+
 				// Store the blob
 				if err := repo.SaveBlob(entry.Hash, content); err != nil {
 					fmt.Printf("Warning: failed to store file %s: %v\n", entry.Path, err)

@@ -1,5 +1,9 @@
 # Noms - A Simple Version Control System
 
+[![CI](https://github.com/Philipp01105/nomsebale/actions/workflows/ci.yml/badge.svg)](https://github.com/Philipp01105/nomsebale/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/Philipp01105/nomsebale/actions/workflows/code-quality.yml/badge.svg)](https://github.com/Philipp01105/nomsebale/actions/workflows/code-quality.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Philipp01105/nomsebale)](https://goreportcard.com/report/github.com/Philipp01105/nomsebale)
+
 Noms is a basic version control system written in Go, designed to track file changes and manage commit history with support for branching.
 
 ## Features
@@ -18,6 +22,18 @@ Build the project from source:
 
 ```bash
 go build -o noms cmd/main.go
+```
+
+Or use the Makefile:
+
+```bash
+make build
+```
+
+Or install directly:
+
+```bash
+go install github.com/Philipp01105/nomsebale/cmd@latest
 ```
 
 ## Usage
@@ -355,6 +371,83 @@ pkg/
   checkout/
     checkout.go        # Commit checkout
 ```
+
+## Contributing
+
+Contributions are welcome! This project uses automated workflows for code quality and testing.
+
+### Development Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Philipp01105/nomsebale.git
+   cd nomsebale
+   ```
+
+2. Install dependencies:
+   ```bash
+   go mod download
+   ```
+
+3. Run tests:
+   ```bash
+   make test
+   # or
+   go test ./...
+   ```
+
+### Code Quality
+
+Before submitting a pull request, ensure your code passes all checks:
+
+```bash
+# Format code
+make fmt
+
+# Run linter
+make vet
+
+# Run tests
+make test
+
+# Run all CI checks
+make ci
+```
+
+### Testing
+
+The project includes unit tests for core functionality:
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+make test-coverage
+
+# Run tests with verbose output
+go test -v ./...
+```
+
+### GitHub Workflows
+
+This project uses GitHub Actions for continuous integration:
+
+- **CI Workflow**: Runs on every push and pull request
+  - Builds the project on multiple Go versions (1.21, 1.22, 1.23)
+  - Runs all tests with race detection
+  - Generates code coverage reports
+
+- **Code Quality Workflow**: Ensures code quality standards
+  - Checks code formatting with `gofmt`
+  - Runs `go vet` for static analysis
+  - Runs `golangci-lint` for comprehensive linting
+  - Verifies `go mod tidy` is up to date
+
+- **Release Workflow**: Automated releases on tags
+  - Builds binaries for multiple platforms (Linux, macOS, Windows)
+  - Creates GitHub releases with binaries and checksums
+  - Triggers on version tags (e.g., `v1.0.0`)
 
 ## License
 

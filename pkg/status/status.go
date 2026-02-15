@@ -79,7 +79,7 @@ func Status() {
 	}
 	fmt.Printf("Latest commit: %s\n", utils.TruncateID(repo.HEAD))
 	fmt.Printf("Commit #%d: %s\n", headCommit.CommitNumber, headCommit.Message)
-	
+
 	hasChanges := false
 
 	if len(delta.Modified) > 0 {

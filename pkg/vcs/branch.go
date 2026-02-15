@@ -30,15 +30,15 @@ func (r *Repository) GetCurrentBranch() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read HEAD: %w", err)
 	}
-	
+
 	headContent := strings.TrimSpace(string(data))
-	
+
 	// Check if HEAD is a symbolic reference to a branch
 	if strings.HasPrefix(headContent, "ref: refs/heads/") {
 		branchName := strings.TrimPrefix(headContent, "ref: refs/heads/")
 		return branchName, nil
 	}
-	
+
 	// Detached HEAD state (direct commit reference)
 	return "", nil
 }
@@ -47,11 +47,11 @@ func (r *Repository) GetCurrentBranch() (string, error) {
 func (r *Repository) SetCurrentBranch(branchName string) error {
 	headPath := filepath.Join(r.Path, NomsDir, HeadFile)
 	headContent := fmt.Sprintf("ref: refs/heads/%s", branchName)
-	
+
 	if err := os.WriteFile(headPath, []byte(headContent), 0644); err != nil {
 		return fmt.Errorf("failed to update HEAD: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -74,12 +74,12 @@ func (r *Repository) CreateBranch(branchName string, commitID string) error {
 			return fmt.Errorf("invalid branch name: cannot contain control characters")
 		}
 	}
-	
+
 	// Check if branch already exists
 	if r.BranchExists(branchName) {
 		return fmt.Errorf("branch '%s' already exists", branchName)
 	}
-	
+
 	// If no commit ID specified, use current HEAD
 	if commitID == "" {
 		// Get current branch to resolve HEAD
@@ -87,7 +87,7 @@ func (r *Repository) CreateBranch(branchName string, commitID string) error {
 		if err != nil {
 			return fmt.Errorf("failed to get current branch: %w", err)
 		}
-		
+
 		if currentBranch != "" {
 			// We're on a branch, get its commit
 			branch, err := r.GetBranch(currentBranch)
@@ -100,61 +100,61 @@ func (r *Repository) CreateBranch(branchName string, commitID string) error {
 			commitID = r.HEAD
 		}
 	}
-	
+
 	// Validate commit exists
 	if commitID != "" {
 		if _, err := r.LoadCommit(commitID); err != nil {
 			return fmt.Errorf("commit %s does not exist: %w", commitID, err)
 		}
 	}
-	
+
 	// Create branch reference
 	branch := &Branch{
 		Name:     branchName,
 		CommitID: commitID,
 	}
-	
+
 	return r.saveBranch(branch)
 }
 
 // GetBranch loads a branch by name
 func (r *Repository) GetBranch(branchName string) (*Branch, error) {
 	branchPath := filepath.Join(r.Path, NomsDir, RefsDir, HeadsDir, branchName+".json")
-	
+
 	data, err := os.ReadFile(branchPath)
 	if err != nil {
 		return nil, fmt.Errorf("branch '%s' not found: %w", branchName, err)
 	}
-	
+
 	var branch Branch
 	if err := json.Unmarshal(data, &branch); err != nil {
 		return nil, fmt.Errorf("failed to parse branch data: %w", err)
 	}
-	
+
 	return &branch, nil
 }
 
 // ListBranches returns all branches in the repository
 func (r *Repository) ListBranches() ([]*Branch, error) {
 	branchesDir := filepath.Join(r.Path, NomsDir, RefsDir, HeadsDir)
-	
+
 	// Check if directory exists
 	if _, err := os.Stat(branchesDir); os.IsNotExist(err) {
 		return []*Branch{}, nil
 	}
-	
+
 	entries, err := os.ReadDir(branchesDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read branches directory: %w", err)
 	}
-	
+
 	var branches []*Branch
 	var skippedBranches []string
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
-		
+
 		branchName := strings.TrimSuffix(entry.Name(), ".json")
 		branch, err := r.GetBranch(branchName)
 		if err != nil {
@@ -164,14 +164,14 @@ func (r *Repository) ListBranches() ([]*Branch, error) {
 		}
 		branches = append(branches, branch)
 	}
-	
+
 	// If any branches were skipped due to corruption, this could be logged
 	// For now, we silently skip them but track them in case caller needs to know
 	if len(skippedBranches) > 0 {
 		// Note: In a production system, this might log to stderr or a debug log
 		// fmt.Fprintf(os.Stderr, "Warning: skipped corrupted branches: %v\n", skippedBranches)
 	}
-	
+
 	return branches, nil
 }
 
@@ -188,23 +188,23 @@ func (r *Repository) DeleteBranch(branchName string) error {
 	if !r.BranchExists(branchName) {
 		return fmt.Errorf("branch '%s' does not exist", branchName)
 	}
-	
+
 	// Prevent deleting current branch
 	currentBranch, err := r.GetCurrentBranch()
 	if err != nil {
 		return fmt.Errorf("failed to get current branch: %w", err)
 	}
-	
+
 	if currentBranch == branchName {
 		return fmt.Errorf("cannot delete current branch '%s'", branchName)
 	}
-	
+
 	// Delete branch file
 	branchPath := filepath.Join(r.Path, NomsDir, RefsDir, HeadsDir, branchName+".json")
 	if err := os.Remove(branchPath); err != nil {
 		return fmt.Errorf("failed to delete branch: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -214,7 +214,7 @@ func (r *Repository) UpdateBranchCommit(branchName string, commitID string) erro
 	if err != nil {
 		return err
 	}
-	
+
 	branch.CommitID = commitID
 	return r.saveBranch(branch)
 }
@@ -226,17 +226,17 @@ func (r *Repository) saveBranch(branch *Branch) error {
 	if err := os.MkdirAll(branchesDir, 0755); err != nil {
 		return fmt.Errorf("failed to create branches directory: %w", err)
 	}
-	
+
 	branchPath := filepath.Join(branchesDir, branch.Name+".json")
 	data, err := json.MarshalIndent(branch, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal branch: %w", err)
 	}
-	
+
 	if err := os.WriteFile(branchPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write branch file: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -246,20 +246,20 @@ func (r *Repository) SwitchBranch(branchName string) error {
 	if !r.BranchExists(branchName) {
 		return fmt.Errorf("branch '%s' does not exist", branchName)
 	}
-	
+
 	// Load the branch
 	branch, err := r.GetBranch(branchName)
 	if err != nil {
 		return err
 	}
-	
+
 	// Update HEAD to point to the branch
 	if err := r.SetCurrentBranch(branchName); err != nil {
 		return err
 	}
-	
+
 	// Update repository's HEAD to the branch's commit
 	r.HEAD = branch.CommitID
-	
+
 	return nil
 }
