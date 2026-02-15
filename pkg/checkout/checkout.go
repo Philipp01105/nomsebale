@@ -77,7 +77,7 @@ func Checkout(commitID string) {
 		if entry.IsDirectory {
 			// Create directory
 			dirPath := utils.GetAbsolutePath(cwd, entry.Path)
-			if err := os.MkdirAll(dirPath, os.FileMode(0755)); err != nil {
+			if err := os.MkdirAll(dirPath, 0755); err != nil {
 				fmt.Printf("  Failed to create directory %s: %v\n", entry.Path, err)
 				failedCount++
 			}
@@ -113,7 +113,7 @@ func Checkout(commitID string) {
 		}
 		
 		// Write file
-		if err := os.WriteFile(filePath, content, os.FileMode(0644)); err != nil {
+		if err := os.WriteFile(filePath, content, 0644); err != nil {
 			fmt.Printf("  Failed to write file %s: %v\n", entry.Path, err)
 			failedCount++
 			continue
@@ -121,7 +121,10 @@ func Checkout(commitID string) {
 		
 		// Try to restore permissions (best effort)
 		if mode, err := parsePermissions(entry.Permissions); err == nil {
-			os.Chmod(filePath, mode)
+			if err := os.Chmod(filePath, mode); err != nil {
+				// Log permission restoration failures for debugging
+				fmt.Printf("  Warning: failed to restore permissions for %s: %v\n", entry.Path, err)
+			}
 		}
 		
 		restoredCount++

@@ -92,7 +92,7 @@ func HashFile(path string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-// GetAbsolutePath joins paths and returns an absolute path
+// GetAbsolutePath joins paths to create an absolute path from a base path and relative path
 func GetAbsolutePath(basePath, relPath string) string {
 	return filepath.Join(basePath, relPath)
 }
