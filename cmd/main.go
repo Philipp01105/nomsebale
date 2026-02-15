@@ -17,7 +17,7 @@ func main() {
 		fmt.Println("Commands:")
 		fmt.Println("  init              Initialize a new noms repository")
 		fmt.Println("  commit <msg>      Create a new commit with the given message")
-		fmt.Println("  log               Show commit history")
+		fmt.Println("  log [--tree]      Show commit history (--tree shows all branches in tree structure)")
 		fmt.Println("  status            Show working tree status")
 		fmt.Println("  checkout <ref>    Checkout a specific commit or branch")
 		fmt.Println("  branch [name]     List branches or create a new branch")
@@ -38,7 +38,18 @@ func main() {
 			message := os.Args[2]
 			commit.Commit(message)
 		},
-		"log":    log.Log,
+		"log": func() {
+			// Check for --tree flag
+			showTree := false
+			if len(os.Args) > 2 && os.Args[2] == "--tree" {
+				showTree = true
+			}
+			if showTree {
+				log.LogTree()
+			} else {
+				log.Log()
+			}
+		},
 		"status": status.Status,
 		"checkout": func() {
 			if len(os.Args) < 3 {
