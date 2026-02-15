@@ -37,7 +37,7 @@ func Commit(message string) {
 			// Check if blob already exists to avoid duplicate storage
 			if !repo.BlobExists(entry.Hash) {
 				// Read file content
-				filePath := utils.GetAbsolutePath(cwd, entry.Path)
+				filePath := utils.JoinPath(cwd, entry.Path)
 				content, err := os.ReadFile(filePath)
 				if err != nil {
 					fmt.Printf("Warning: failed to read file %s: %v\n", entry.Path, err)

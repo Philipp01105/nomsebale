@@ -76,7 +76,7 @@ func Checkout(commitID string) {
 	for _, entry := range treeState.Entries {
 		if entry.IsDirectory {
 			// Create directory
-			dirPath := utils.GetAbsolutePath(cwd, entry.Path)
+			dirPath := utils.JoinPath(cwd, entry.Path)
 			if err := os.MkdirAll(dirPath, 0755); err != nil {
 				fmt.Printf("  Failed to create directory %s: %v\n", entry.Path, err)
 				failedCount++
@@ -87,7 +87,7 @@ func Checkout(commitID string) {
 		treeFiles[entry.Path] = true
 		
 		// Check if file already exists with same hash
-		filePath := utils.GetAbsolutePath(cwd, entry.Path)
+		filePath := utils.JoinPath(cwd, entry.Path)
 		if _, err := os.Stat(filePath); err == nil {
 			currentHash, err := utils.HashFile(filePath)
 			if err == nil && currentHash == entry.Hash {
@@ -134,7 +134,7 @@ func Checkout(commitID string) {
 	deletedCount := 0
 	for filePath := range currentFiles {
 		if !treeFiles[filePath] {
-			absPath := utils.GetAbsolutePath(cwd, filePath)
+			absPath := utils.JoinPath(cwd, filePath)
 			if err := os.Remove(absPath); err != nil {
 				fmt.Printf("  Failed to delete %s: %v\n", filePath, err)
 			} else {
@@ -228,11 +228,11 @@ func findCommit(repo *vcs.Repository, partialID string) (string, error) {
 // parsePermissions converts a permission string to os.FileMode
 // Handles strings like "-rw-r--r--" or "0644"
 func parsePermissions(permStr string) (os.FileMode, error) {
-	// If it starts with a digit, try parsing as octal
-	if len(permStr) > 0 && permStr[0] >= '0' && permStr[0] <= '7' {
+	// If it looks like octal (starts with digit), try parsing as octal
+	if len(permStr) > 0 && permStr[0] >= '0' && permStr[0] <= '9' {
 		perm, err := strconv.ParseUint(permStr, 8, 32)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("invalid octal permission: %w", err)
 		}
 		return os.FileMode(perm), nil
 	}
