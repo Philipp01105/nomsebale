@@ -15,7 +15,7 @@ help:
 
 # Build the binary
 build:
-	go build -o noms cmd/main.go
+	go build -o noms ./cmd
 
 # Run tests
 test:
