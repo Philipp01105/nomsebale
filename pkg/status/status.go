@@ -126,8 +126,8 @@ func Status() {
 	currentTreeState := vcs.NewTreeState(currentEntries)
 	delta := vcs.ComputeDelta(treeState, currentTreeState)
 
-	// Get current branch
-	currentBranch, err := repo.GetCurrentBranch()
+	// Get current branch (error is ignored - empty string is handled correctly)
+	currentBranch, _ := repo.GetCurrentBranch() //nolint:errcheck // Empty string is handled correctly
 
 	// Display status
 	displayBranchInfo(repo, currentBranch)

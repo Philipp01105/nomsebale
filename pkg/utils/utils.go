@@ -83,7 +83,7 @@ func HashFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck // Best effort close on defer
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {

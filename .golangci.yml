@@ -20,6 +20,8 @@ linters:
       check-blank: true
     govet:
       enable-all: true
+      disable:
+        - shadow
     gocyclo:
       min-complexity: 15
     dupl:

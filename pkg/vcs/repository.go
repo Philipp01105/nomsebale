@@ -25,9 +25,9 @@ const (
 
 // Repository represents a version control repository
 type Repository struct {
-	Config      RepositoryConfig `json:"config"`
 	Path        string           `json:"path"`
 	HEAD        string           `json:"head"`
+	Config      RepositoryConfig `json:"config"`
 	CommitCount int              `json:"commit_count"`
 }
 
