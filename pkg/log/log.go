@@ -174,15 +174,6 @@ func LogTree() {
 	for idx, commitID := range allCommitIDs {
 		node := commitGraph[commitID]
 
-		// Determine tree character based on position and children
-		var treeChar string
-		if len(node.children) > 1 {
-			// This is a fork point (multiple children)
-			treeChar = "*"
-		} else {
-			treeChar = "*"
-		}
-
 		// Build branch info string
 		var branchInfo string
 		if len(node.branches) > 0 {
@@ -200,23 +191,17 @@ func LogTree() {
 		}
 
 		// Print commit info
-		fmt.Printf("%s commit %s%s\n", treeChar, utils.TruncateID(node.commit.ID), branchInfo)
+		fmt.Printf("* commit %s%s\n", utils.TruncateID(node.commit.ID), branchInfo)
 
 		// Determine if we should draw a vertical line to next commit
 		drawLine := idx < len(allCommitIDs)-1
-		lineChar := "|"
-
-		// For commits with multiple children, show a split
-		if len(node.children) > 1 {
-			lineChar = "|"
-		}
 
 		// Print additional commit details with proper indentation
 		if drawLine {
-			fmt.Printf("%s Author: %s\n", lineChar, node.commit.Metadata.Author)
-			fmt.Printf("%s Date:   %s\n", lineChar, node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
-			fmt.Printf("%s\n", lineChar)
-			fmt.Printf("%s     %s\n", lineChar, node.commit.Message)
+			fmt.Printf("| Author: %s\n", node.commit.Metadata.Author)
+			fmt.Printf("| Date:   %s\n", node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
+			fmt.Printf("|\n")
+			fmt.Printf("|     %s\n", node.commit.Message)
 		} else {
 			fmt.Printf("  Author: %s\n", node.commit.Metadata.Author)
 			fmt.Printf("  Date:   %s\n", node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
@@ -226,7 +211,7 @@ func LogTree() {
 
 		// Add spacing between commits
 		if drawLine {
-			fmt.Printf("%s\n", lineChar)
+			fmt.Printf("|\n")
 		}
 	}
 
