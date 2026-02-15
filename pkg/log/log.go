@@ -70,7 +70,7 @@ type commitNode struct {
 }
 
 // printCommitTree recursively prints commits in tree format
-func printCommitTree(commitGraph map[string]*commitNode, commitID string, prefix string, isLast bool, printed map[string]bool, currentBranch string) {
+func printCommitTree(commitGraph map[string]*commitNode, commitID string, printed map[string]bool, currentBranch string) {
 	// Skip if already printed
 	if printed[commitID] {
 		return
@@ -109,10 +109,10 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, prefix
 
 	// Handle parent commit
 	if node.commit.ParentID != "" {
-		parentNode := commitGraph[node.commit.ParentID]
+		parentNode, parentExists := commitGraph[node.commit.ParentID]
 		
 		// Check if parent has multiple children (branch point)
-		if len(parentNode.children) > 1 {
+		if parentExists && len(parentNode.children) > 1 {
 			// This is a merge point - show the branch divergence
 			fmt.Printf("|\n")
 			
@@ -161,7 +161,7 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, prefix
 		}
 
 		// Print parent commit
-		printCommitTree(commitGraph, node.commit.ParentID, prefix, true, printed, currentBranch)
+		printCommitTree(commitGraph, node.commit.ParentID, printed, currentBranch)
 	}
 }
 
@@ -284,7 +284,7 @@ func LogTree() {
 
 	// Print commits using depth-first traversal
 	for _, startID := range startCommits {
-		printCommitTree(commitGraph, startID, "", true, printed, currentBranch)
+		printCommitTree(commitGraph, startID, printed, currentBranch)
 	}
 
 	fmt.Println()
