@@ -57,6 +57,21 @@ func Commit(message string) {
 	// Create tree state
 	treeState := vcs.NewTreeState(entries)
 
+	// Get current branch
+	currentBranch, err := repo.GetCurrentBranch()
+	if err != nil {
+		fmt.Printf("Error getting current branch: %v\n", err)
+		return
+	}
+
+	// If on a branch, get the branch's commit as parent
+	if currentBranch != "" {
+		branch, err := repo.GetBranch(currentBranch)
+		if err == nil && branch.CommitID != "" {
+			repo.HEAD = branch.CommitID
+		}
+	}
+
 	// Create commit
 	commit, err := repo.CreateCommit(treeState, message)
 	if err != nil {
@@ -64,8 +79,20 @@ func Commit(message string) {
 		return
 	}
 
+	// If on a branch, update the branch to point to the new commit
+	if currentBranch != "" {
+		if err := repo.UpdateBranchCommit(currentBranch, commit.ID); err != nil {
+			fmt.Printf("Error updating branch: %v\n", err)
+			return
+		}
+	}
+
 	// Print commit information
-	fmt.Printf("Created %s commit: %s\n", commit.Type, utils.TruncateID(commit.ID))
+	branchInfo := ""
+	if currentBranch != "" {
+		branchInfo = fmt.Sprintf(" [%s]", currentBranch)
+	}
+	fmt.Printf("Created %s commit%s: %s\n", commit.Type, branchInfo, utils.TruncateID(commit.ID))
 	fmt.Printf("Commit number: %d\n", commit.CommitNumber)
 	fmt.Printf("Message: %s\n", commit.Message)
 	fmt.Printf("Tree state: %s\n", utils.TruncateID(commit.TreeStateID))

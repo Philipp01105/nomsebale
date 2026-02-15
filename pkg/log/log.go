@@ -29,6 +29,14 @@ func Log() {
 		return
 	}
 
+	// Get current branch
+	currentBranch, _ := repo.GetCurrentBranch()
+	if currentBranch != "" {
+		fmt.Printf("Branch: %s\n\n", currentBranch)
+	} else {
+		fmt.Printf("HEAD detached at %s\n\n", utils.TruncateID(repo.HEAD))
+	}
+
 	// Walk through commit history
 	currentID := repo.HEAD
 	for currentID != "" {

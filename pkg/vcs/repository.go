@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -153,7 +154,25 @@ func (r *Repository) loadHEAD() error {
 	if err != nil {
 		return err
 	}
-	r.HEAD = string(data)
+	
+	headContent := strings.TrimSpace(string(data))
+	
+	// Check if HEAD is a symbolic reference to a branch
+	if strings.HasPrefix(headContent, "ref: refs/heads/") {
+		branchName := strings.TrimPrefix(headContent, "ref: refs/heads/")
+		// Load the branch to get the actual commit ID
+		branch, err := r.GetBranch(branchName)
+		if err != nil {
+			// Branch exists but has no commits yet
+			r.HEAD = ""
+			return nil
+		}
+		r.HEAD = branch.CommitID
+	} else {
+		// Direct commit reference (detached HEAD)
+		r.HEAD = headContent
+	}
+	
 	return nil
 }
 
@@ -265,10 +284,8 @@ func (r *Repository) CreateCommit(treeState *TreeState, message string) (*Commit
 		return nil, fmt.Errorf("failed to save updated config: %w", err)
 	}
 
-	// Update HEAD
-	if err := r.updateHEAD(commit.ID); err != nil {
-		return nil, fmt.Errorf("failed to update HEAD: %w", err)
-	}
+	// Note: HEAD file update is handled by the caller
+	// (either updates branch ref or detached HEAD)
 
 	return commit, nil
 }

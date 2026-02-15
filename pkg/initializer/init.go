@@ -46,8 +46,21 @@ func Init() {
 		return
 	}
 
+	// Create default branch (main)
+	if err := repo.CreateBranch(vcs.DefaultBranch, ""); err != nil {
+		fmt.Printf("Error creating default branch: %v\n", err)
+		return
+	}
+
+	// Set current branch to main
+	if err := repo.SetCurrentBranch(vcs.DefaultBranch); err != nil {
+		fmt.Printf("Error setting current branch: %v\n", err)
+		return
+	}
+
 	fmt.Println("Initialized empty noms repository in", cwd)
 	fmt.Printf("Configuration:\n")
 	fmt.Printf("  Full snapshot interval: every %d commits\n", repo.Config.FullSnapshotInterval)
 	fmt.Printf("  Default author: %s\n", repo.Config.Author)
+	fmt.Printf("  Default branch: %s\n", vcs.DefaultBranch)
 }
