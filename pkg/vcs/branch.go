@@ -166,11 +166,8 @@ func (r *Repository) ListBranches() ([]*Branch, error) {
 	}
 
 	// If any branches were skipped due to corruption, this could be logged
-	// For now, we silently skip them but track them in case caller needs to know
-	if len(skippedBranches) > 0 {
-		// Note: In a production system, this might log to stderr or a debug log
-		// fmt.Fprintf(os.Stderr, "Warning: skipped corrupted branches: %v\n", skippedBranches)
-	}
+	// For now, we silently skip them
+	_ = skippedBranches
 
 	return branches, nil
 }
