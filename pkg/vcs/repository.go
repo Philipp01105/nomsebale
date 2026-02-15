@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -24,10 +25,10 @@ const (
 
 // Repository represents a version control repository
 type Repository struct {
-	Path          string           `json:"path"`
-	HEAD          string           `json:"head"`
-	CommitCount   int              `json:"commit_count"`
-	Config        RepositoryConfig `json:"config"`
+	Path        string           `json:"path"`
+	HEAD        string           `json:"head"`
+	CommitCount int              `json:"commit_count"`
+	Config      RepositoryConfig `json:"config"`
 }
 
 // RepositoryConfig contains repository configuration
@@ -86,7 +87,7 @@ func InitRepository(path string, config RepositoryConfig) (*Repository, error) {
 // LoadRepository loads an existing repository from the given path
 func LoadRepository(path string) (*Repository, error) {
 	nomsPath := filepath.Join(path, NomsDir)
-	
+
 	// Check if .noms directory exists
 	if _, err := os.Stat(nomsPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("not a noms repository: %s", path)
@@ -153,7 +154,26 @@ func (r *Repository) loadHEAD() error {
 	if err != nil {
 		return err
 	}
-	r.HEAD = string(data)
+
+	headContent := strings.TrimSpace(string(data))
+
+	// Check if HEAD is a symbolic reference to a branch
+	if strings.HasPrefix(headContent, "ref: refs/heads/") {
+		branchName := strings.TrimPrefix(headContent, "ref: refs/heads/")
+		// Try to load the branch to get the actual commit ID
+		branch, err := r.GetBranch(branchName)
+		if err != nil {
+			// Branch reference exists but branch file may not be loaded yet or has no commits
+			// This can happen during initialization or if the branch file is missing
+			r.HEAD = ""
+			return nil
+		}
+		r.HEAD = branch.CommitID
+	} else {
+		// Direct commit reference (detached HEAD)
+		r.HEAD = headContent
+	}
+
 	return nil
 }
 
@@ -265,10 +285,8 @@ func (r *Repository) CreateCommit(treeState *TreeState, message string) (*Commit
 		return nil, fmt.Errorf("failed to save updated config: %w", err)
 	}
 
-	// Update HEAD
-	if err := r.updateHEAD(commit.ID); err != nil {
-		return nil, fmt.Errorf("failed to update HEAD: %w", err)
-	}
+	// Note: HEAD file update is handled by the caller
+	// (either updates branch ref or detached HEAD)
 
 	return commit, nil
 }
@@ -280,17 +298,17 @@ func (r *Repository) SaveBlob(hash string, content []byte) error {
 	if len(hash) < 2 {
 		return fmt.Errorf("invalid hash: too short")
 	}
-	
+
 	objDir := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2])
 	if err := os.MkdirAll(objDir, 0755); err != nil {
 		return fmt.Errorf("failed to create object directory: %w", err)
 	}
-	
+
 	objPath := filepath.Join(objDir, hash[2:])
 	if err := os.WriteFile(objPath, content, 0644); err != nil {
 		return fmt.Errorf("failed to write blob: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -299,13 +317,13 @@ func (r *Repository) LoadBlob(hash string) ([]byte, error) {
 	if len(hash) < 2 {
 		return nil, fmt.Errorf("invalid hash: too short")
 	}
-	
+
 	objPath := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2], hash[2:])
 	content, err := os.ReadFile(objPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read blob: %w", err)
 	}
-	
+
 	return content, nil
 }
 
@@ -314,7 +332,7 @@ func (r *Repository) BlobExists(hash string) bool {
 	if len(hash) < 2 {
 		return false
 	}
-	
+
 	objPath := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2], hash[2:])
 	_, err := os.Stat(objPath)
 	return err == nil

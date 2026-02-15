@@ -32,7 +32,12 @@ func Status() {
 
 	// If there are no commits yet
 	if repo.HEAD == "" {
-		fmt.Println("On initial commit")
+		// Get current branch
+		currentBranch, err := repo.GetCurrentBranch()
+		if err == nil && currentBranch != "" {
+			fmt.Printf("On branch %s\n", currentBranch)
+		}
+		fmt.Println("No commits yet")
 		fmt.Printf("\nUntracked files:\n")
 		for _, entry := range currentEntries {
 			if !entry.IsDirectory {
@@ -63,10 +68,18 @@ func Status() {
 	currentTreeState := vcs.NewTreeState(currentEntries)
 	delta := vcs.ComputeDelta(treeState, currentTreeState)
 
+	// Get current branch
+	currentBranch, err := repo.GetCurrentBranch()
+
 	// Display status
-	fmt.Printf("On commit %s\n", utils.TruncateID(repo.HEAD))
+	if err == nil && currentBranch != "" {
+		fmt.Printf("On branch %s\n", currentBranch)
+	} else {
+		fmt.Printf("HEAD detached at %s\n", utils.TruncateID(repo.HEAD))
+	}
+	fmt.Printf("Latest commit: %s\n", utils.TruncateID(repo.HEAD))
 	fmt.Printf("Commit #%d: %s\n", headCommit.CommitNumber, headCommit.Message)
-	
+
 	hasChanges := false
 
 	if len(delta.Modified) > 0 {
