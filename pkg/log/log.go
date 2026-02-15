@@ -272,7 +272,7 @@ func LogTree() {
 				childI, existsI := commitGraph[node.children[i]]
 				childJ, existsJ := commitGraph[node.children[j]]
 				if !existsI || !existsJ {
-					return existsI // Put missing children at the end
+					return existsI // Put valid children first
 				}
 				return childI.commit.CommitNumber > childJ.commit.CommitNumber
 			})
@@ -296,7 +296,12 @@ func LogTree() {
 
 	// Sort start commits by commit number (descending)
 	sort.Slice(startCommits, func(i, j int) bool {
-		return commitGraph[startCommits[i]].commit.CommitNumber > commitGraph[startCommits[j]].commit.CommitNumber
+		commitI, existsI := commitGraph[startCommits[i]]
+		commitJ, existsJ := commitGraph[startCommits[j]]
+		if !existsI || !existsJ {
+			return existsI // Put valid commits first
+		}
+		return commitI.commit.CommitNumber > commitJ.commit.CommitNumber
 	})
 
 	// Print commits using depth-first traversal
