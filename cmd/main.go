@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"noms/pkg/commands"
 	"os"
+
+	"github.com/Philipp01105/nomsebale/pkg/commands"
 )
 
 func main() {

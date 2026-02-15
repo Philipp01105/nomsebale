@@ -3,13 +3,14 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"noms/pkg/branch"
-	"noms/pkg/checkout"
-	"noms/pkg/commit"
-	"noms/pkg/initializer"
-	"noms/pkg/log"
-	"noms/pkg/status"
 	"os"
+
+	"github.com/Philipp01105/nomsebale/pkg/branch"
+	"github.com/Philipp01105/nomsebale/pkg/checkout"
+	"github.com/Philipp01105/nomsebale/pkg/commit"
+	"github.com/Philipp01105/nomsebale/pkg/initializer"
+	"github.com/Philipp01105/nomsebale/pkg/log"
+	"github.com/Philipp01105/nomsebale/pkg/status"
 )
 
 // GlobalFlags defines flags that can be used with any command

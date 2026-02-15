@@ -4,10 +4,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"noms/pkg/vcs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
 // TruncateID safely truncates an ID to 8 characters for display

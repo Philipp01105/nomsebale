@@ -2,9 +2,10 @@ package commit
 
 import (
 	"fmt"
-	"noms/pkg/utils"
-	"noms/pkg/vcs"
 	"os"
+
+	"github.com/Philipp01105/nomsebale/pkg/utils"
+	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
 // Commit creates a new commit in the repository

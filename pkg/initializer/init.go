@@ -2,9 +2,10 @@ package initializer
 
 import (
 	"fmt"
-	"noms/pkg/vcs"
 	"os"
 	"time"
+
+	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
 type File struct {

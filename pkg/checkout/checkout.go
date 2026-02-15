@@ -2,12 +2,13 @@ package checkout
 
 import (
 	"fmt"
-	"noms/pkg/utils"
-	"noms/pkg/vcs"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/Philipp01105/nomsebale/pkg/utils"
+	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
 // Checkout restores files from a specific commit or switches to a branch
