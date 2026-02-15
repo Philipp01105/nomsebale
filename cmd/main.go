@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"noms/pkg/branch"
 	"noms/pkg/checkout"
@@ -17,7 +18,7 @@ func main() {
 		fmt.Println("Commands:")
 		fmt.Println("  init              Initialize a new noms repository")
 		fmt.Println("  commit <msg>      Create a new commit with the given message")
-		fmt.Println("  log [--tree]      Show commit history (--tree shows all branches in tree structure)")
+		fmt.Println("  log [-t|--tree]   Show commit history (-t or --tree shows all branches in tree structure)")
 		fmt.Println("  status            Show working tree status")
 		fmt.Println("  checkout <ref>    Checkout a specific commit or branch")
 		fmt.Println("  branch [name]     List branches or create a new branch")
@@ -39,12 +40,16 @@ func main() {
 			commit.Commit(message)
 		},
 		"log": func() {
-			// Check for --tree flag
-			showTree := false
-			if len(os.Args) > 2 && os.Args[2] == "--tree" {
-				showTree = true
-			}
-			if showTree {
+			// Create a FlagSet for the log command
+			logFlags := flag.NewFlagSet("log", flag.ExitOnError)
+			showTree := logFlags.Bool("tree", false, "show all branches in tree structure")
+			treeShort := logFlags.Bool("t", false, "show all branches in tree structure (short)")
+			
+			// Parse flags from remaining arguments
+			logFlags.Parse(os.Args[2:])
+			
+			// Check if either flag was set
+			if *showTree || *treeShort {
 				log.LogTree()
 			} else {
 				log.Log()
