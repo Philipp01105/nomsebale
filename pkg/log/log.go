@@ -33,7 +33,11 @@ func Log() {
 	}
 
 	// Get current branch
-	currentBranch, _ := repo.GetCurrentBranch()
+	currentBranch, err := repo.GetCurrentBranch()
+	if err != nil {
+		fmt.Printf("Error getting current branch: %v\n", err)
+		return
+	}
 	if currentBranch != "" {
 		fmt.Printf("Branch: %s\n\n", currentBranch)
 	} else {
@@ -201,7 +205,11 @@ func HistoryTree() {
 	}
 
 	// Get current branch
-	currentBranch, _ := repo.GetCurrentBranch()
+	currentBranch, err := repo.GetCurrentBranch()
+	if err != nil {
+		fmt.Printf("Error getting current branch: %v\n", err)
+		return
+	}
 
 	// Build commit graph
 	commitGraph := make(map[string]*commitNode)

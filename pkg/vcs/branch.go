@@ -48,7 +48,7 @@ func (r *Repository) SetCurrentBranch(branchName string) error {
 	headPath := filepath.Join(r.Path, NomsDir, HeadFile)
 	headContent := fmt.Sprintf("ref: refs/heads/%s", branchName)
 
-	if err := os.WriteFile(headPath, []byte(headContent), 0644); err != nil {
+	if err := os.WriteFile(headPath, []byte(headContent), 0o644); err != nil {
 		return fmt.Errorf("failed to update HEAD: %w", err)
 	}
 
@@ -56,7 +56,7 @@ func (r *Repository) SetCurrentBranch(branchName string) error {
 }
 
 // CreateBranch creates a new branch pointing to the specified commit
-func (r *Repository) CreateBranch(branchName string, commitID string) error {
+func (r *Repository) CreateBranch(branchName, commitID string) error {
 	// Validate branch name
 	if branchName == "" {
 		return fmt.Errorf("branch name cannot be empty")
@@ -206,7 +206,7 @@ func (r *Repository) DeleteBranch(branchName string) error {
 }
 
 // UpdateBranchCommit updates the commit that a branch points to
-func (r *Repository) UpdateBranchCommit(branchName string, commitID string) error {
+func (r *Repository) UpdateBranchCommit(branchName, commitID string) error {
 	branch, err := r.GetBranch(branchName)
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func (r *Repository) UpdateBranchCommit(branchName string, commitID string) erro
 func (r *Repository) saveBranch(branch *Branch) error {
 	// Ensure refs/heads directory exists
 	branchesDir := filepath.Join(r.Path, NomsDir, RefsDir, HeadsDir)
-	if err := os.MkdirAll(branchesDir, 0755); err != nil {
+	if err := os.MkdirAll(branchesDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create branches directory: %w", err)
 	}
 
@@ -230,7 +230,7 @@ func (r *Repository) saveBranch(branch *Branch) error {
 		return fmt.Errorf("failed to marshal branch: %w", err)
 	}
 
-	if err := os.WriteFile(branchPath, data, 0644); err != nil {
+	if err := os.WriteFile(branchPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write branch file: %w", err)
 	}
 

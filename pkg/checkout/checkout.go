@@ -117,7 +117,7 @@ func Checkout(ref string) {
 		if entry.IsDirectory {
 			// Create directory
 			dirPath := utils.JoinPath(cwd, entry.Path)
-			if err := os.MkdirAll(dirPath, 0755); err != nil {
+			if err := os.MkdirAll(dirPath, 0o755); err != nil {
 				fmt.Printf("  Failed to create directory %s: %v\n", entry.Path, err)
 				failedCount++
 			}
@@ -146,14 +146,14 @@ func Checkout(ref string) {
 
 		// Ensure parent directory exists
 		parentDir := filepath.Dir(filePath)
-		if err := os.MkdirAll(parentDir, 0755); err != nil {
+		if err := os.MkdirAll(parentDir, 0o755); err != nil {
 			fmt.Printf("  Failed to create parent directory for %s: %v\n", entry.Path, err)
 			failedCount++
 			continue
 		}
 
 		// Write file
-		if err := os.WriteFile(filePath, content, 0644); err != nil {
+		if err := os.WriteFile(filePath, content, 0o644); err != nil {
 			fmt.Printf("  Failed to write file %s: %v\n", entry.Path, err)
 			failedCount++
 			continue
@@ -275,10 +275,10 @@ func findCommit(repo *vcs.Repository, partialID string) (string, error) {
 }
 
 // parsePermissions converts a permission string to os.FileMode
-// Handles strings like "-rw-r--r--" or "0644"
+// Handles strings like "-rw-r--r--" or "0o644"
 func parsePermissions(permStr string) (os.FileMode, error) {
 	// If it looks like octal (starts with digit), try parsing as octal
-	if len(permStr) > 0 && permStr[0] >= '0' && permStr[0] <= '9' {
+	if permStr != "" && permStr[0] >= '0' && permStr[0] <= '9' {
 		perm, err := strconv.ParseUint(permStr, 8, 32)
 		if err != nil {
 			return 0, fmt.Errorf("invalid octal permission: %w", err)
@@ -292,35 +292,35 @@ func parsePermissions(permStr string) (os.FileMode, error) {
 
 		// Owner permissions
 		if permStr[1] == 'r' {
-			mode |= 0400
+			mode |= 0o400
 		}
 		if permStr[2] == 'w' {
-			mode |= 0200
+			mode |= 0o200
 		}
 		if permStr[3] == 'x' {
-			mode |= 0100
+			mode |= 0o100
 		}
 
 		// Group permissions
 		if permStr[4] == 'r' {
-			mode |= 0040
+			mode |= 0o040
 		}
 		if permStr[5] == 'w' {
-			mode |= 0020
+			mode |= 0o020
 		}
 		if permStr[6] == 'x' {
-			mode |= 0010
+			mode |= 0o010
 		}
 
 		// Other permissions
 		if permStr[7] == 'r' {
-			mode |= 0004
+			mode |= 0o004
 		}
 		if permStr[8] == 'w' {
-			mode |= 0002
+			mode |= 0o002
 		}
 		if permStr[9] == 'x' {
-			mode |= 0001
+			mode |= 0o001
 		}
 
 		return mode, nil

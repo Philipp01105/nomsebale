@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -240,7 +241,7 @@ func TestBlobStorage(t *testing.T) {
 		t.Fatalf("LoadBlob failed: %v", err)
 	}
 
-	if string(loadedContent) != string(testContent) {
+	if !bytes.Equal(loadedContent, testContent) {
 		t.Errorf("Expected content '%s', got '%s'", testContent, loadedContent)
 	}
 }

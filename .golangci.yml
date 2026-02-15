@@ -33,13 +33,19 @@ linters:
     - errcheck
     - govet
     - ineffassign
-    - staticcheck
+    - staticcheck  # staticcheck includes gosimple
     - unused
     - misspell
     - goconst
     - gocritic
     - gocyclo
     - dupl
+
+formatters:
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports
 
 issues:
   exclude-use-default: false

@@ -7,8 +7,6 @@ import (
 	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
-
-
 func Init() {
 	// Get current working directory
 	cwd, err := os.Getwd()
