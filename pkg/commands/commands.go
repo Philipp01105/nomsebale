@@ -227,8 +227,7 @@ func (ct *CommandTree) Execute(commandName string, args []string) error {
 
 	// Add global flags
 	for _, flagDef := range ct.GlobalFlags {
-		switch flagDef.Type {
-		case "bool":
+		if flagDef.Type == "bool" {
 			fs.Bool(flagDef.Name, flagDef.Default.(bool), flagDef.Description)
 			if flagDef.ShortName != "" {
 				fs.Bool(flagDef.ShortName, flagDef.Default.(bool), flagDef.Description)

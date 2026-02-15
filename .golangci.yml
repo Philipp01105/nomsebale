@@ -1,3 +1,5 @@
+version: "2"
+
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -29,19 +31,21 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
-    - staticcheck
-    - typecheck
+    - staticcheck  # staticcheck includes gosimple
     - unused
-    - gofmt
-    - goimports
     - misspell
     - goconst
     - gocritic
     - gocyclo
     - dupl
+
+formatters:
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports
 
 issues:
   exclude-use-default: false

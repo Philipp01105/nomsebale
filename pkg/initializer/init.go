@@ -3,23 +3,9 @@ package initializer
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
-
-type File struct {
-	Name      string
-	extension string
-	hash      string
-	delta     time.Duration
-	changes   []change
-}
-
-type change struct {
-	before string
-	after  string
-}
 
 func Init() {
 	// Get current working directory
