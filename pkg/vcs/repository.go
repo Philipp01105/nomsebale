@@ -14,6 +14,8 @@ const (
 	CommitsDir = "commits"
 	// TreesDir stores tree state objects
 	TreesDir = "trees"
+	// ObjectsDir stores file content blobs
+	ObjectsDir = "objects"
 	// ConfigFile stores repository configuration
 	ConfigFile = "config.json"
 	// HeadFile stores the current HEAD commit ID
@@ -45,7 +47,7 @@ func InitRepository(path string, config RepositoryConfig) (*Repository, error) {
 	}
 
 	// Create subdirectories
-	dirs := []string{CommitsDir, TreesDir}
+	dirs := []string{CommitsDir, TreesDir, ObjectsDir}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(nomsPath, dir)
 		if err := os.MkdirAll(dirPath, 0755); err != nil {
@@ -269,4 +271,51 @@ func (r *Repository) CreateCommit(treeState *TreeState, message string) (*Commit
 	}
 
 	return commit, nil
+}
+
+// SaveBlob saves file content to the objects directory
+// The blob is stored with its hash as the filename
+func (r *Repository) SaveBlob(hash string, content []byte) error {
+	// Use first 2 characters of hash as subdirectory (sharding)
+	if len(hash) < 2 {
+		return fmt.Errorf("invalid hash: too short")
+	}
+	
+	objDir := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2])
+	if err := os.MkdirAll(objDir, 0755); err != nil {
+		return fmt.Errorf("failed to create object directory: %w", err)
+	}
+	
+	objPath := filepath.Join(objDir, hash[2:])
+	if err := os.WriteFile(objPath, content, 0644); err != nil {
+		return fmt.Errorf("failed to write blob: %w", err)
+	}
+	
+	return nil
+}
+
+// LoadBlob loads file content from the objects directory
+func (r *Repository) LoadBlob(hash string) ([]byte, error) {
+	if len(hash) < 2 {
+		return nil, fmt.Errorf("invalid hash: too short")
+	}
+	
+	objPath := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2], hash[2:])
+	content, err := os.ReadFile(objPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read blob: %w", err)
+	}
+	
+	return content, nil
+}
+
+// BlobExists checks if a blob exists in the object store
+func (r *Repository) BlobExists(hash string) bool {
+	if len(hash) < 2 {
+		return false
+	}
+	
+	objPath := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2], hash[2:])
+	_, err := os.Stat(objPath)
+	return err == nil
 }

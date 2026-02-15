@@ -5,6 +5,9 @@ import (
 	"noms/pkg/utils"
 	"noms/pkg/vcs"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 // Checkout restores files from a specific commit
@@ -47,23 +50,106 @@ func Checkout(commitID string) {
 	// Restore files from tree state
 	fmt.Printf("Checking out commit %s\n", utils.TruncateID(fullCommitID))
 	fmt.Printf("Commit #%d: %s\n", commit.CommitNumber, commit.Message)
+	fmt.Printf("\nRestoring %d entries...\n", len(treeState.Entries))
 	
-	// Note: For a basic implementation, we just inform the user
-	// A full implementation would need to store file contents
-	fmt.Println("\nNote: This is a basic version control system.")
-	fmt.Println("File restoration requires stored file contents (not yet implemented).")
-	fmt.Printf("\nTree state contains %d entries:\n", len(treeState.Entries))
+	restoredCount := 0
+	skippedCount := 0
+	failedCount := 0
 	
-	fileCount := 0
-	for _, entry := range treeState.Entries {
+	// Get current files to track what should be deleted
+	currentEntries, err := utils.ScanDirectory(cwd)
+	if err != nil {
+		fmt.Printf("Warning: failed to scan current directory: %v\n", err)
+	}
+	
+	currentFiles := make(map[string]bool)
+	for _, entry := range currentEntries {
 		if !entry.IsDirectory {
-			fileCount++
-			fmt.Printf("  %s (hash: %s)\n", entry.Path, utils.TruncateID(entry.Hash))
+			currentFiles[entry.Path] = true
 		}
 	}
 	
-	if fileCount == 0 {
-		fmt.Println("  (no files)")
+	// Track files in the tree state
+	treeFiles := make(map[string]bool)
+	
+	// Restore files from the tree state
+	for _, entry := range treeState.Entries {
+		if entry.IsDirectory {
+			// Create directory
+			dirPath := utils.GetAbsolutePath(cwd, entry.Path)
+			if err := os.MkdirAll(dirPath, os.FileMode(0755)); err != nil {
+				fmt.Printf("  Failed to create directory %s: %v\n", entry.Path, err)
+				failedCount++
+			}
+			continue
+		}
+		
+		treeFiles[entry.Path] = true
+		
+		// Check if file already exists with same hash
+		filePath := utils.GetAbsolutePath(cwd, entry.Path)
+		if _, err := os.Stat(filePath); err == nil {
+			currentHash, err := utils.HashFile(filePath)
+			if err == nil && currentHash == entry.Hash {
+				skippedCount++
+				continue
+			}
+		}
+		
+		// Load blob content
+		content, err := repo.LoadBlob(entry.Hash)
+		if err != nil {
+			fmt.Printf("  Failed to load content for %s: %v\n", entry.Path, err)
+			failedCount++
+			continue
+		}
+		
+		// Ensure parent directory exists
+		parentDir := filepath.Dir(filePath)
+		if err := os.MkdirAll(parentDir, 0755); err != nil {
+			fmt.Printf("  Failed to create parent directory for %s: %v\n", entry.Path, err)
+			failedCount++
+			continue
+		}
+		
+		// Write file
+		if err := os.WriteFile(filePath, content, os.FileMode(0644)); err != nil {
+			fmt.Printf("  Failed to write file %s: %v\n", entry.Path, err)
+			failedCount++
+			continue
+		}
+		
+		// Try to restore permissions (best effort)
+		if mode, err := parsePermissions(entry.Permissions); err == nil {
+			os.Chmod(filePath, mode)
+		}
+		
+		restoredCount++
+	}
+	
+	// Delete files that are not in the tree state
+	deletedCount := 0
+	for filePath := range currentFiles {
+		if !treeFiles[filePath] {
+			absPath := utils.GetAbsolutePath(cwd, filePath)
+			if err := os.Remove(absPath); err != nil {
+				fmt.Printf("  Failed to delete %s: %v\n", filePath, err)
+			} else {
+				deletedCount++
+			}
+		}
+	}
+	
+	fmt.Printf("\nCheckout complete:\n")
+	fmt.Printf("  Restored: %d files\n", restoredCount)
+	if skippedCount > 0 {
+		fmt.Printf("  Skipped (unchanged): %d files\n", skippedCount)
+	}
+	if deletedCount > 0 {
+		fmt.Printf("  Deleted: %d files\n", deletedCount)
+	}
+	if failedCount > 0 {
+		fmt.Printf("  Failed: %d files\n", failedCount)
 	}
 
 	// Update HEAD to point to this commit
@@ -94,27 +180,99 @@ func matchesCommitID(fullID, partialID string) bool {
 
 // findCommit finds a commit by full or partial ID
 func findCommit(repo *vcs.Repository, partialID string) (string, error) {
-	// If no commits exist
-	if repo.HEAD == "" {
+	// Get all commit files in the commits directory
+	commitsDir := filepath.Join(repo.Path, vcs.NomsDir, vcs.CommitsDir)
+	entries, err := os.ReadDir(commitsDir)
+	if err != nil {
+		return "", fmt.Errorf("error reading commits directory: %w", err)
+	}
+	
+	if len(entries) == 0 {
 		return "", fmt.Errorf("no commits in repository")
 	}
-
-	// Walk through all commits to find a match
-	currentID := repo.HEAD
-	for currentID != "" {
+	
+	// Search through all commits
+	var matches []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		
+		// Extract commit ID from filename (remove .json extension)
+		filename := entry.Name()
+		if !strings.HasSuffix(filename, ".json") {
+			continue
+		}
+		commitID := filename[:len(filename)-5]
+		
 		// Check if this commit matches
-		if matchesCommitID(currentID, partialID) {
-			return currentID, nil
+		if matchesCommitID(commitID, partialID) {
+			matches = append(matches, commitID)
 		}
-
-		// Load commit to get parent
-		commit, err := repo.LoadCommit(currentID)
-		if err != nil {
-			return "", fmt.Errorf("error loading commit %s: %w", currentID, err)
-		}
-
-		currentID = commit.ParentID
 	}
+	
+	if len(matches) == 0 {
+		return "", fmt.Errorf("commit not found: %s", partialID)
+	}
+	
+	if len(matches) > 1 {
+		return "", fmt.Errorf("ambiguous commit ID %s, matches: %d commits", partialID, len(matches))
+	}
+	
+	return matches[0], nil
+}
 
-	return "", fmt.Errorf("commit not found: %s", partialID)
+// parsePermissions converts a permission string to os.FileMode
+// Handles strings like "-rw-r--r--" or "0644"
+func parsePermissions(permStr string) (os.FileMode, error) {
+	// If it starts with a digit, try parsing as octal
+	if len(permStr) > 0 && permStr[0] >= '0' && permStr[0] <= '7' {
+		perm, err := strconv.ParseUint(permStr, 8, 32)
+		if err != nil {
+			return 0, err
+		}
+		return os.FileMode(perm), nil
+	}
+	
+	// Try to parse symbolic notation like "-rw-r--r--"
+	if len(permStr) >= 10 {
+		var mode os.FileMode
+		
+		// Owner permissions
+		if permStr[1] == 'r' {
+			mode |= 0400
+		}
+		if permStr[2] == 'w' {
+			mode |= 0200
+		}
+		if permStr[3] == 'x' {
+			mode |= 0100
+		}
+		
+		// Group permissions
+		if permStr[4] == 'r' {
+			mode |= 0040
+		}
+		if permStr[5] == 'w' {
+			mode |= 0020
+		}
+		if permStr[6] == 'x' {
+			mode |= 0010
+		}
+		
+		// Other permissions
+		if permStr[7] == 'r' {
+			mode |= 0004
+		}
+		if permStr[8] == 'w' {
+			mode |= 0002
+		}
+		if permStr[9] == 'x' {
+			mode |= 0001
+		}
+		
+		return mode, nil
+	}
+	
+	return 0, fmt.Errorf("invalid permission string: %s", permStr)
 }

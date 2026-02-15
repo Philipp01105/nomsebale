@@ -30,6 +30,30 @@ func Commit(message string) {
 		return
 	}
 
+	// Store file contents for all files
+	fileCount := 0
+	for _, entry := range entries {
+		if !entry.IsDirectory && entry.Hash != "" {
+			// Check if blob already exists to avoid duplicate storage
+			if !repo.BlobExists(entry.Hash) {
+				// Read file content
+				filePath := utils.GetAbsolutePath(cwd, entry.Path)
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					fmt.Printf("Warning: failed to read file %s: %v\n", entry.Path, err)
+					continue
+				}
+				
+				// Store the blob
+				if err := repo.SaveBlob(entry.Hash, content); err != nil {
+					fmt.Printf("Warning: failed to store file %s: %v\n", entry.Path, err)
+					continue
+				}
+			}
+			fileCount++
+		}
+	}
+
 	// Create tree state
 	treeState := vcs.NewTreeState(entries)
 
@@ -49,5 +73,5 @@ func Commit(message string) {
 		fmt.Printf("Parent: %s\n", utils.TruncateID(commit.ParentID))
 	}
 	fmt.Printf("Timestamp: %s\n", commit.Timestamp.Format("2006-01-02 15:04:05"))
-	fmt.Printf("Files tracked: %d\n", len(entries))
+	fmt.Printf("Files tracked: %d\n", fileCount)
 }
