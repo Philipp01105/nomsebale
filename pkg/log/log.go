@@ -69,7 +69,16 @@ type commitNode struct {
 	children []string // child commit IDs
 }
 
-// printCommitTree recursively prints commits in tree format
+// printCommitTree recursively prints commits in tree format.
+// It uses depth-first traversal to display commits and their parent relationships.
+// When a parent has multiple children (branch divergence), it displays them with
+// proper indentation and merge point indicators.
+//
+// Parameters:
+//   - commitGraph: map of commit IDs to commit nodes
+//   - commitID: the ID of the commit to print
+//   - printed: map tracking which commits have been printed to avoid duplicates
+//   - currentBranch: name of the current branch, used to display HEAD indicator
 func printCommitTree(commitGraph map[string]*commitNode, commitID string, printed map[string]bool, currentBranch string) {
 	// Skip if already printed
 	if printed[commitID] {
@@ -131,7 +140,10 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, printe
 				for i := childIndex + 1; i < len(parentNode.children); i++ {
 					otherChildID := parentNode.children[i]
 					if !printed[otherChildID] {
-						otherNode := commitGraph[otherChildID]
+						otherNode, otherExists := commitGraph[otherChildID]
+						if !otherExists {
+							continue
+						}
 						var otherBranchInfo string
 						if len(otherNode.branches) > 0 {
 							otherBranchNames := make([]string, len(otherNode.branches))
@@ -257,7 +269,12 @@ func LogTree() {
 	for _, node := range commitGraph {
 		if len(node.children) > 1 {
 			sort.Slice(node.children, func(i, j int) bool {
-				return commitGraph[node.children[i]].commit.CommitNumber > commitGraph[node.children[j]].commit.CommitNumber
+				childI, existsI := commitGraph[node.children[i]]
+				childJ, existsJ := commitGraph[node.children[j]]
+				if !existsI || !existsJ {
+					return existsI // Put missing children at the end
+				}
+				return childI.commit.CommitNumber > childJ.commit.CommitNumber
 			})
 		}
 	}
