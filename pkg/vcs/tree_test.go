@@ -124,7 +124,7 @@ func TestComputeDeltaNoChanges(t *testing.T) {
 }
 
 func TestComputeDeltaAllNew(t *testing.T) {
-	oldEntries := []TreeEntry{}
+	var oldEntries []TreeEntry
 
 	newEntries := []TreeEntry{
 		{Path: "file1.txt", Hash: "hash1", IsDirectory: false},
@@ -155,7 +155,7 @@ func TestComputeDeltaAllDeleted(t *testing.T) {
 		{Path: "file2.txt", Hash: "hash2", IsDirectory: false},
 	}
 
-	newEntries := []TreeEntry{}
+	var newEntries []TreeEntry
 
 	oldState := NewTreeState(oldEntries)
 	newState := NewTreeState(newEntries)

@@ -86,7 +86,12 @@ func TestInitRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -128,7 +133,12 @@ func TestLoadRepository(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	// Initialize repository
 	config := RepositoryConfig{
@@ -162,7 +172,12 @@ func TestShouldCreateFullSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -199,7 +214,12 @@ func TestBlobStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,

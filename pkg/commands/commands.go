@@ -109,7 +109,7 @@ func NewCommandTree() *CommandTree {
 				fs.Lookup("t").Value.(flag.Getter).Get().(bool)
 
 			if showTree {
-				log.LogTree()
+				log.HistoryTree()
 			} else {
 				log.Log()
 			}
@@ -236,7 +236,10 @@ func (ct *CommandTree) Execute(commandName string, args []string) error {
 	}
 
 	// Parse the flags
-	fs.Parse(args)
+	err := fs.Parse(args)
+	if err != nil {
+		return err
+	}
 
 	// Execute the command handler
 	return cmd.Handler(fs)

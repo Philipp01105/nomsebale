@@ -82,7 +82,12 @@ func HashFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {

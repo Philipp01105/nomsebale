@@ -11,7 +11,12 @@ func TestCreateBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -46,7 +51,12 @@ func TestBranchNameValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -88,7 +98,12 @@ func TestGetBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -123,7 +138,12 @@ func TestListBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -172,7 +192,12 @@ func TestDeleteBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -224,7 +249,12 @@ func TestDeleteCurrentBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -259,7 +289,12 @@ func TestGetCurrentBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+
+		}
+	}(tempDir)
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,

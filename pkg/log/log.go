@@ -177,8 +177,8 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, printe
 	}
 }
 
-// LogTree displays the commit history in a tree structure showing all branches
-func LogTree() {
+// HistoryTree displays the commit history in a tree structure showing all branches
+func HistoryTree() {
 	// Get current working directory
 	cwd, err := os.Getwd()
 	if err != nil {
