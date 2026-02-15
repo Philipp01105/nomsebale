@@ -8,6 +8,60 @@ import (
 	"github.com/Philipp01105/nomsebale/pkg/vcs"
 )
 
+// storeFileBlobs stores file contents as blobs in the repository
+func storeFileBlobs(repo *vcs.Repository, entries []vcs.TreeEntry, cwd string) int {
+	fileCount := 0
+	for _, entry := range entries {
+		if !entry.IsDirectory && entry.Hash != "" {
+			// Check if blob already exists to avoid duplicate storage
+			if !repo.BlobExists(entry.Hash) {
+				// Read file content
+				filePath := utils.JoinPath(cwd, entry.Path)
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					fmt.Printf("Warning: failed to read file %s: %v\n", entry.Path, err)
+					continue
+				}
+
+				// Store the blob
+				if err := repo.SaveBlob(entry.Hash, content); err != nil {
+					fmt.Printf("Warning: failed to store file %s: %v\n", entry.Path, err)
+					continue
+				}
+			}
+			fileCount++
+		}
+	}
+	return fileCount
+}
+
+// updateHEADFromBranch updates the repository HEAD to point to the branch's commit
+func updateHEADFromBranch(repo *vcs.Repository, currentBranch string) {
+	if currentBranch != "" {
+		branch, err := repo.GetBranch(currentBranch)
+		if err == nil && branch.CommitID != "" {
+			repo.HEAD = branch.CommitID
+		}
+	}
+}
+
+// printCommitInfo prints information about the newly created commit
+func printCommitInfo(commit *vcs.Commit, currentBranch string, fileCount int) {
+	branchInfo := ""
+	if currentBranch != "" {
+		branchInfo = fmt.Sprintf(" [%s]", currentBranch)
+	}
+	fmt.Printf("Created %s commit%s: %s\n", commit.Type, branchInfo, utils.TruncateID(commit.ID))
+	fmt.Printf("Commit number: %d\n", commit.CommitNumber)
+	fmt.Printf("Message: %s\n", commit.Message)
+	fmt.Printf("Tree state: %s\n", utils.TruncateID(commit.TreeStateID))
+	if commit.ParentID != "" {
+		fmt.Printf("Parent: %s\n", utils.TruncateID(commit.ParentID))
+	}
+	fmt.Printf("Timestamp: %s\n", commit.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("Files tracked: %d\n", fileCount)
+}
+
 // Commit creates a new commit in the repository
 func Commit(message string) {
 	// Get current working directory
@@ -32,28 +86,7 @@ func Commit(message string) {
 	}
 
 	// Store file contents for all files
-	fileCount := 0
-	for _, entry := range entries {
-		if !entry.IsDirectory && entry.Hash != "" {
-			// Check if blob already exists to avoid duplicate storage
-			if !repo.BlobExists(entry.Hash) {
-				// Read file content
-				filePath := utils.JoinPath(cwd, entry.Path)
-				content, err := os.ReadFile(filePath)
-				if err != nil {
-					fmt.Printf("Warning: failed to read file %s: %v\n", entry.Path, err)
-					continue
-				}
-
-				// Store the blob
-				if err := repo.SaveBlob(entry.Hash, content); err != nil {
-					fmt.Printf("Warning: failed to store file %s: %v\n", entry.Path, err)
-					continue
-				}
-			}
-			fileCount++
-		}
-	}
+	fileCount := storeFileBlobs(repo, entries, cwd)
 
 	// Create tree state
 	treeState := vcs.NewTreeState(entries)
@@ -66,12 +99,7 @@ func Commit(message string) {
 	}
 
 	// If on a branch, get the branch's commit as parent
-	if currentBranch != "" {
-		branch, err := repo.GetBranch(currentBranch)
-		if err == nil && branch.CommitID != "" {
-			repo.HEAD = branch.CommitID
-		}
-	}
+	updateHEADFromBranch(repo, currentBranch)
 
 	// Create commit
 	commit, err := repo.CreateCommit(treeState, message)
@@ -89,17 +117,5 @@ func Commit(message string) {
 	}
 
 	// Print commit information
-	branchInfo := ""
-	if currentBranch != "" {
-		branchInfo = fmt.Sprintf(" [%s]", currentBranch)
-	}
-	fmt.Printf("Created %s commit%s: %s\n", commit.Type, branchInfo, utils.TruncateID(commit.ID))
-	fmt.Printf("Commit number: %d\n", commit.CommitNumber)
-	fmt.Printf("Message: %s\n", commit.Message)
-	fmt.Printf("Tree state: %s\n", utils.TruncateID(commit.TreeStateID))
-	if commit.ParentID != "" {
-		fmt.Printf("Parent: %s\n", utils.TruncateID(commit.ParentID))
-	}
-	fmt.Printf("Timestamp: %s\n", commit.Timestamp.Format("2006-01-02 15:04:05"))
-	fmt.Printf("Files tracked: %d\n", fileCount)
+	printCommitInfo(commit, currentBranch, fileCount)
 }

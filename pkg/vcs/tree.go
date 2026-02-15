@@ -16,10 +16,10 @@ type TreeState struct {
 type TreeEntry struct {
 	Path         string `json:"path"`
 	Hash         string `json:"hash"`
-	IsDirectory  bool   `json:"is_directory"`
-	Size         int64  `json:"size"`
 	Permissions  string `json:"permissions"`
+	Size         int64  `json:"size"`
 	ModifiedTime int64  `json:"modified_time"`
+	IsDirectory  bool   `json:"is_directory"`
 }
 
 // NewTreeState creates a new tree state from entries

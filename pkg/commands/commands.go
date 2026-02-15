@@ -21,20 +21,20 @@ type GlobalFlags struct {
 
 // CommandDefinition defines a command with its flags and handler
 type CommandDefinition struct {
+	Flags       map[string]FlagDefinition
+	Handler     func(*flag.FlagSet) error
 	Name        string
 	Description string
 	Usage       string
-	Flags       map[string]FlagDefinition
-	Handler     func(*flag.FlagSet) error
 }
 
 // FlagDefinition defines a single flag
 type FlagDefinition struct {
+	Default     interface{}
 	Name        string
 	ShortName   string
 	Description string
 	Type        string // "bool", "string", "int"
-	Default     interface{}
 }
 
 // CommandTree holds all command definitions
@@ -106,8 +106,25 @@ func NewCommandTree() *CommandTree {
 		},
 		Handler: func(fs *flag.FlagSet) error {
 			// Flags are already parsed by the framework
-			showTree := fs.Lookup("tree").Value.(flag.Getter).Get().(bool) ||
-				fs.Lookup("t").Value.(flag.Getter).Get().(bool)
+			showTree := false
+
+			// Check both long and short form of the flag
+			if treeFlag := fs.Lookup("tree"); treeFlag != nil {
+				if getter, ok := treeFlag.Value.(flag.Getter); ok {
+					if boolVal, ok := getter.Get().(bool); ok {
+						showTree = boolVal
+					}
+				}
+			}
+			if !showTree {
+				if tFlag := fs.Lookup("t"); tFlag != nil {
+					if getter, ok := tFlag.Value.(flag.Getter); ok {
+						if boolVal, ok := getter.Get().(bool); ok {
+							showTree = boolVal
+						}
+					}
+				}
+			}
 
 			if showTree {
 				log.HistoryTree()
@@ -208,18 +225,24 @@ func (ct *CommandTree) Execute(commandName string, args []string) error {
 	for _, flagDef := range cmd.Flags {
 		switch flagDef.Type {
 		case "bool":
+			//nolint:errcheck // Return value is a pointer, not an error
 			fs.Bool(flagDef.Name, flagDef.Default.(bool), flagDef.Description)
 			if flagDef.ShortName != "" {
+				//nolint:errcheck // Return value is a pointer, not an error
 				fs.Bool(flagDef.ShortName, flagDef.Default.(bool), flagDef.Description)
 			}
 		case "string":
+			//nolint:errcheck // Return value is a pointer, not an error
 			fs.String(flagDef.Name, flagDef.Default.(string), flagDef.Description)
 			if flagDef.ShortName != "" {
+				//nolint:errcheck // Return value is a pointer, not an error
 				fs.String(flagDef.ShortName, flagDef.Default.(string), flagDef.Description)
 			}
 		case "int":
+			//nolint:errcheck // Return value is a pointer, not an error
 			fs.Int(flagDef.Name, flagDef.Default.(int), flagDef.Description)
 			if flagDef.ShortName != "" {
+				//nolint:errcheck // Return value is a pointer, not an error
 				fs.Int(flagDef.ShortName, flagDef.Default.(int), flagDef.Description)
 			}
 		}
@@ -228,8 +251,10 @@ func (ct *CommandTree) Execute(commandName string, args []string) error {
 	// Add global flags
 	for _, flagDef := range ct.GlobalFlags {
 		if flagDef.Type == "bool" {
+			//nolint:errcheck // Return value is a pointer, not an error
 			fs.Bool(flagDef.Name, flagDef.Default.(bool), flagDef.Description)
 			if flagDef.ShortName != "" {
+				//nolint:errcheck // Return value is a pointer, not an error
 				fs.Bool(flagDef.ShortName, flagDef.Default.(bool), flagDef.Description)
 			}
 		}
