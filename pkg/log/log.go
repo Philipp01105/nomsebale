@@ -119,12 +119,12 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, printe
 	// Handle parent commit
 	if node.commit.ParentID != "" {
 		parentNode, parentExists := commitGraph[node.commit.ParentID]
-		
+
 		// Check if parent has multiple children (branch point)
 		if parentExists && len(parentNode.children) > 1 {
 			// This is a merge point - show the branch divergence
 			fmt.Printf("|\n")
-			
+
 			// Find which child we are
 			childIndex := -1
 			for i, childID := range parentNode.children {
@@ -133,7 +133,7 @@ func printCommitTree(commitGraph map[string]*commitNode, commitID string, printe
 					break
 				}
 			}
-			
+
 			// If we're not the last child, show we're branching off
 			if childIndex < len(parentNode.children)-1 {
 				// Show other branches continuing

@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"noms/pkg/commands"
 	"os"
 )
 
 func main() {
 	// Initialize the command tree
-	cmdTree := NewCommandTree()
+	cmdTree := commands.NewCommandTree()
 
 	if len(os.Args) < 2 {
 		cmdTree.PrintHelp()
