@@ -160,10 +160,11 @@ func (r *Repository) loadHEAD() error {
 	// Check if HEAD is a symbolic reference to a branch
 	if strings.HasPrefix(headContent, "ref: refs/heads/") {
 		branchName := strings.TrimPrefix(headContent, "ref: refs/heads/")
-		// Load the branch to get the actual commit ID
+		// Try to load the branch to get the actual commit ID
 		branch, err := r.GetBranch(branchName)
 		if err != nil {
-			// Branch exists but has no commits yet
+			// Branch reference exists but branch file may not be loaded yet or has no commits
+			// This can happen during initialization or if the branch file is missing
 			r.HEAD = ""
 			return nil
 		}

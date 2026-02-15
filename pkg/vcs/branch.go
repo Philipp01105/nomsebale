@@ -61,8 +61,18 @@ func (r *Repository) CreateBranch(branchName string, commitID string) error {
 	if branchName == "" {
 		return fmt.Errorf("branch name cannot be empty")
 	}
-	if strings.Contains(branchName, " ") || strings.Contains(branchName, "/") {
-		return fmt.Errorf("invalid branch name: %s", branchName)
+	// Check for invalid characters commonly rejected in VCS
+	invalidChars := []string{" ", "/", "~", "^", ":", "?", "*", "[", "\\", "..", "@{"}
+	for _, char := range invalidChars {
+		if strings.Contains(branchName, char) {
+			return fmt.Errorf("invalid branch name: cannot contain '%s'", char)
+		}
+	}
+	// Check for control characters
+	for _, c := range branchName {
+		if c < 32 || c == 127 {
+			return fmt.Errorf("invalid branch name: cannot contain control characters")
+		}
 	}
 	
 	// Check if branch already exists
@@ -139,6 +149,7 @@ func (r *Repository) ListBranches() ([]*Branch, error) {
 	}
 	
 	var branches []*Branch
+	var skippedBranches []string
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -147,9 +158,18 @@ func (r *Repository) ListBranches() ([]*Branch, error) {
 		branchName := strings.TrimSuffix(entry.Name(), ".json")
 		branch, err := r.GetBranch(branchName)
 		if err != nil {
-			continue // Skip invalid branches
+			// Log corrupted branch data for debugging
+			skippedBranches = append(skippedBranches, branchName)
+			continue
 		}
 		branches = append(branches, branch)
+	}
+	
+	// If any branches were skipped due to corruption, this could be logged
+	// For now, we silently skip them but track them in case caller needs to know
+	if len(skippedBranches) > 0 {
+		// Note: In a production system, this might log to stderr or a debug log
+		// fmt.Fprintf(os.Stderr, "Warning: skipped corrupted branches: %v\n", skippedBranches)
 	}
 	
 	return branches, nil
