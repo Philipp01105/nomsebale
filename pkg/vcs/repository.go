@@ -43,7 +43,7 @@ type RepositoryConfig struct {
 func InitRepository(path string, config RepositoryConfig) (*Repository, error) {
 	// Create .noms directory structure
 	nomsPath := filepath.Join(path, NomsDir)
-	if err := os.MkdirAll(nomsPath, 0755); err != nil {
+	if err := os.MkdirAll(nomsPath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create .noms directory: %w", err)
 	}
 
@@ -51,7 +51,7 @@ func InitRepository(path string, config RepositoryConfig) (*Repository, error) {
 	dirs := []string{CommitsDir, TreesDir, ObjectsDir}
 	for _, dir := range dirs {
 		dirPath := filepath.Join(nomsPath, dir)
-		if err := os.MkdirAll(dirPath, 0755); err != nil {
+		if err := os.MkdirAll(dirPath, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create %s directory: %w", dir, err)
 		}
 	}
@@ -117,7 +117,7 @@ func (r *Repository) saveConfig() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configPath, data, 0644)
+	return os.WriteFile(configPath, data, 0o644)
 }
 
 // SaveConfig is a public wrapper for saveConfig
@@ -139,7 +139,7 @@ func (r *Repository) loadConfig() error {
 func (r *Repository) updateHEAD(commitID string) error {
 	headPath := filepath.Join(r.Path, NomsDir, HeadFile)
 	r.HEAD = commitID
-	return os.WriteFile(headPath, []byte(commitID), 0644)
+	return os.WriteFile(headPath, []byte(commitID), 0o644)
 }
 
 // UpdateHEAD is a public wrapper for updateHEAD
@@ -194,7 +194,7 @@ func (r *Repository) SaveCommit(commit *Commit) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal commit: %w", err)
 	}
-	if err := os.WriteFile(commitPath, data, 0644); err != nil {
+	if err := os.WriteFile(commitPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write commit file: %w", err)
 	}
 	return nil
@@ -221,7 +221,7 @@ func (r *Repository) SaveTreeState(tree *TreeState) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal tree state: %w", err)
 	}
-	if err := os.WriteFile(treePath, data, 0644); err != nil {
+	if err := os.WriteFile(treePath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write tree state file: %w", err)
 	}
 	return nil
@@ -300,12 +300,12 @@ func (r *Repository) SaveBlob(hash string, content []byte) error {
 	}
 
 	objDir := filepath.Join(r.Path, NomsDir, ObjectsDir, hash[:2])
-	if err := os.MkdirAll(objDir, 0755); err != nil {
+	if err := os.MkdirAll(objDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create object directory: %w", err)
 	}
 
 	objPath := filepath.Join(objDir, hash[2:])
-	if err := os.WriteFile(objPath, content, 0644); err != nil {
+	if err := os.WriteFile(objPath, content, 0o644); err != nil {
 		return fmt.Errorf("failed to write blob: %w", err)
 	}
 

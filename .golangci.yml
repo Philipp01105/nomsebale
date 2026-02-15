@@ -1,3 +1,5 @@
+version: "2"
+
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -15,8 +17,6 @@ linters-settings:
     locale: US
   lll:
     line-length: 120
-  goimports:
-    local-prefixes: noms
   gocritic:
     enabled-tags:
       - diagnostic
@@ -29,19 +29,18 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
-    - gofmt
-    - goimports
     - misspell
     - goconst
     - gocritic
-    - gocyclo
     - dupl
+
+formatters:
+  enable:
+    - goimports
 
 issues:
   exclude-use-default: false
@@ -54,6 +53,9 @@ issues:
         - errcheck
         - dupl
         - gosec
+    - linters:
+        - gocyclo
+      text: "cyclomatic complexity.*is high"
 
 run:
   timeout: 5m

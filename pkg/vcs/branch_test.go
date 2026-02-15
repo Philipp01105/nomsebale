@@ -6,12 +6,14 @@ import (
 	"testing"
 )
 
+const testBranchName = "test-branch"
+
 func TestCreateBranch(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "noms-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -24,18 +26,18 @@ func TestCreateBranch(t *testing.T) {
 	}
 
 	// Create a branch
-	err = repo.CreateBranch("test-branch", "")
+	err = repo.CreateBranch(testBranchName, "")
 	if err != nil {
 		t.Fatalf("CreateBranch failed: %v", err)
 	}
 
 	// Check if branch exists
-	if !repo.BranchExists("test-branch") {
+	if !repo.BranchExists(testBranchName) {
 		t.Error("Branch should exist after creation")
 	}
 
 	// Try to create the same branch again (should fail)
-	err = repo.CreateBranch("test-branch", "")
+	err = repo.CreateBranch(testBranchName, "")
 	if err == nil {
 		t.Error("Creating duplicate branch should fail")
 	}
@@ -46,7 +48,7 @@ func TestBranchNameValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -88,7 +90,7 @@ func TestGetBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -101,7 +103,7 @@ func TestGetBranch(t *testing.T) {
 	}
 
 	// Create a branch
-	branchName := "test-branch"
+	branchName := testBranchName
 	err = repo.CreateBranch(branchName, "")
 	if err != nil {
 		t.Fatalf("CreateBranch failed: %v", err)
@@ -123,7 +125,7 @@ func TestListBranches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -172,7 +174,7 @@ func TestDeleteBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -185,7 +187,7 @@ func TestDeleteBranch(t *testing.T) {
 	}
 
 	// Create a branch
-	branchName := "test-branch"
+	branchName := testBranchName
 	err = repo.CreateBranch(branchName, "")
 	if err != nil {
 		t.Fatalf("CreateBranch failed: %v", err)
@@ -224,7 +226,7 @@ func TestDeleteCurrentBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -237,7 +239,7 @@ func TestDeleteCurrentBranch(t *testing.T) {
 	}
 
 	// Create and set current branch
-	branchName := "test-branch"
+	branchName := testBranchName
 	err = repo.CreateBranch(branchName, "")
 	if err != nil {
 		t.Fatalf("CreateBranch failed: %v", err)
@@ -259,7 +261,7 @@ func TestGetCurrentBranch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	config := RepositoryConfig{
 		FullSnapshotInterval: 10,
@@ -272,7 +274,7 @@ func TestGetCurrentBranch(t *testing.T) {
 	}
 
 	// Create and set a branch
-	branchName := "test-branch"
+	branchName := testBranchName
 	err = repo.CreateBranch(branchName, "")
 	if err != nil {
 		t.Fatalf("CreateBranch failed: %v", err)
