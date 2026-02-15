@@ -69,6 +69,102 @@ type commitNode struct {
 	children []string // child commit IDs
 }
 
+// printCommitTree recursively prints commits in tree format
+func printCommitTree(commitGraph map[string]*commitNode, commitID string, prefix string, isLast bool, printed map[string]bool, currentBranch string) {
+	// Skip if already printed
+	if printed[commitID] {
+		return
+	}
+	printed[commitID] = true
+
+	node, exists := commitGraph[commitID]
+	if !exists {
+		return
+	}
+
+	// Build branch info string
+	var branchInfo string
+	if len(node.branches) > 0 {
+		branchNames := make([]string, len(node.branches))
+		for i, b := range node.branches {
+			if b == currentBranch {
+				branchNames[i] = "HEAD -> " + b
+			} else {
+				branchNames[i] = b
+			}
+		}
+		// Sort branch names for consistent output
+		sort.Strings(branchNames)
+		branchInfo = " (" + strings.Join(branchNames, ", ") + ")"
+	}
+
+	// Print commit info
+	fmt.Printf("* commit %s%s\n", utils.TruncateID(node.commit.ID), branchInfo)
+
+	// Print commit details
+	fmt.Printf("| Author: %s\n", node.commit.Metadata.Author)
+	fmt.Printf("| Date:   %s\n", node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
+	fmt.Printf("|\n")
+	fmt.Printf("|     %s\n", node.commit.Message)
+
+	// Handle parent commit
+	if node.commit.ParentID != "" {
+		parentNode := commitGraph[node.commit.ParentID]
+		
+		// Check if parent has multiple children (branch point)
+		if len(parentNode.children) > 1 {
+			// This is a merge point - show the branch divergence
+			fmt.Printf("|\n")
+			
+			// Find which child we are
+			childIndex := -1
+			for i, childID := range parentNode.children {
+				if childID == commitID {
+					childIndex = i
+					break
+				}
+			}
+			
+			// If we're not the last child, show we're branching off
+			if childIndex < len(parentNode.children)-1 {
+				// Show other branches continuing
+				for i := childIndex + 1; i < len(parentNode.children); i++ {
+					otherChildID := parentNode.children[i]
+					if !printed[otherChildID] {
+						otherNode := commitGraph[otherChildID]
+						var otherBranchInfo string
+						if len(otherNode.branches) > 0 {
+							otherBranchNames := make([]string, len(otherNode.branches))
+							for j, b := range otherNode.branches {
+								if b == currentBranch {
+									otherBranchNames[j] = "HEAD -> " + b
+								} else {
+									otherBranchNames[j] = b
+								}
+							}
+							sort.Strings(otherBranchNames)
+							otherBranchInfo = " (" + strings.Join(otherBranchNames, ", ") + ")"
+						}
+						fmt.Printf("| * commit %s%s\n", utils.TruncateID(otherNode.commit.ID), otherBranchInfo)
+						fmt.Printf("| | Author: %s\n", otherNode.commit.Metadata.Author)
+						fmt.Printf("| | Date:   %s\n", otherNode.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
+						fmt.Printf("| |\n")
+						fmt.Printf("| |     %s\n", otherNode.commit.Message)
+						fmt.Printf("| |\n")
+						printed[otherChildID] = true
+					}
+				}
+				fmt.Printf("|/\n")
+			}
+		} else {
+			fmt.Printf("|\n")
+		}
+
+		// Print parent commit
+		printCommitTree(commitGraph, node.commit.ParentID, prefix, true, printed, currentBranch)
+	}
+}
+
 // LogTree displays the commit history in a tree structure showing all branches
 func LogTree() {
 	// Get current working directory
@@ -157,62 +253,38 @@ func LogTree() {
 		}
 	}
 
-	// Collect all unique commit IDs and sort by commit number (descending)
-	var allCommitIDs []string
-	for commitID := range commitGraph {
-		allCommitIDs = append(allCommitIDs, commitID)
+	// Sort children by commit number (higher first) for consistent display
+	for _, node := range commitGraph {
+		if len(node.children) > 1 {
+			sort.Slice(node.children, func(i, j int) bool {
+				return commitGraph[node.children[i]].commit.CommitNumber > commitGraph[node.children[j]].commit.CommitNumber
+			})
+		}
 	}
-
-	sort.Slice(allCommitIDs, func(i, j int) bool {
-		return commitGraph[allCommitIDs[i]].commit.CommitNumber > commitGraph[allCommitIDs[j]].commit.CommitNumber
-	})
 
 	// Display the tree
 	fmt.Println("Commit history (tree view):")
 	fmt.Println()
 
-	for idx, commitID := range allCommitIDs {
-		node := commitGraph[commitID]
+	// Track which commits we've already printed
+	printed := make(map[string]bool)
 
-		// Build branch info string
-		var branchInfo string
-		if len(node.branches) > 0 {
-			branchNames := make([]string, len(node.branches))
-			for i, b := range node.branches {
-				if b == currentBranch {
-					branchNames[i] = "HEAD -> " + b
-				} else {
-					branchNames[i] = b
-				}
-			}
-			// Sort branch names for consistent output
-			sort.Strings(branchNames)
-			branchInfo = " (" + strings.Join(branchNames, ", ") + ")"
+	// Start with commits that have no parents (root commits) or from branch heads
+	var startCommits []string
+	for _, branch := range branches {
+		if branch.CommitID != "" && !printed[branch.CommitID] {
+			startCommits = append(startCommits, branch.CommitID)
 		}
+	}
 
-		// Print commit info
-		fmt.Printf("* commit %s%s\n", utils.TruncateID(node.commit.ID), branchInfo)
+	// Sort start commits by commit number (descending)
+	sort.Slice(startCommits, func(i, j int) bool {
+		return commitGraph[startCommits[i]].commit.CommitNumber > commitGraph[startCommits[j]].commit.CommitNumber
+	})
 
-		// Determine if we should draw a vertical line to next commit
-		drawLine := idx < len(allCommitIDs)-1
-
-		// Print additional commit details with proper indentation
-		if drawLine {
-			fmt.Printf("| Author: %s\n", node.commit.Metadata.Author)
-			fmt.Printf("| Date:   %s\n", node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
-			fmt.Printf("|\n")
-			fmt.Printf("|     %s\n", node.commit.Message)
-		} else {
-			fmt.Printf("  Author: %s\n", node.commit.Metadata.Author)
-			fmt.Printf("  Date:   %s\n", node.commit.Timestamp.Format("Mon Jan 2 15:04:05 2006"))
-			fmt.Printf("\n")
-			fmt.Printf("      %s\n", node.commit.Message)
-		}
-
-		// Add spacing between commits
-		if drawLine {
-			fmt.Printf("|\n")
-		}
+	// Print commits using depth-first traversal
+	for _, startID := range startCommits {
+		printCommitTree(commitGraph, startID, "", true, printed, currentBranch)
 	}
 
 	fmt.Println()
