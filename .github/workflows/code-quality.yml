@@ -6,64 +6,87 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
-    name: Lint
+    name: Lint (golangci-lint)
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: stable
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v9
-      with:
-        version: latest
-        args: --timeout=5m
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9.2.0
+        with:
+          version: latest
+          args: --timeout=5m
 
   format:
-    name: Format Check
+    name: Format Check (gofmt + goimports)
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.23'
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
-    - name: Check formatting
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "The following files are not formatted:"
-          gofmt -s -l .
-          exit 1
-        fi
+      - name: Install goimports
+        run: |
+          go install golang.org/x/tools/cmd/goimports@latest
 
-    - name: Run go vet
-      run: go vet ./...
+      - name: Check gofmt
+        shell: bash
+        run: |
+          files="$(gofmt -s -l .)"
+          if [ -n "$files" ]; then
+            echo "The following files are not gofmt-formatted:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Check goimports
+        shell: bash
+        run: |
+          files="$(goimports -l .)"
+          if [ -n "$files" ]; then
+            echo "The following files are not goimports-formatted:"
+            echo "$files"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
 
   mod-tidy:
     name: Go Mod Tidy Check
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.23'
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
 
-    - name: Check go mod tidy
-      run: |
-        go mod tidy
-        git diff --exit-code
+      - name: Check go mod tidy is clean
+        shell: bash
+        run: |
+          go mod tidy
+          git diff --exit-code

@@ -54,7 +54,8 @@ formatters:
     - goimports
   settings:
     goimports:
-      - local-prefixes: github.com/Philipp01105/nomsebale
+      local-prefixes:
+        - github.com/Philipp01105/nomsebale
 
 issues:
   max-issues-per-linter: 0
